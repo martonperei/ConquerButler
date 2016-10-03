@@ -71,6 +71,7 @@
     <Compile Include="CursorHelper.cs" />
     <Compile Include="Tasks\HealthTask.cs" />
     <Compile Include="ImageDetectionHelper.cs" />
+    <Compile Include="Tasks\HuntTask.cs" />
     <Compile Include="Tasks\MineTask.cs" />
     <Compile Include="PriorityQueue.cs" />
     <Compile Include="ProcessHelper.cs" />

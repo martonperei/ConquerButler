@@ -31,7 +31,6 @@
                     VerticalAlignment="Top"
                     HorizontalAlignment="Left"
                     ScrollViewer.CanContentScroll="True"
-                    ScrollViewer.VerticalScrollBarVisibility="Visible"
                     SelectedItem="{Binding Model.SelectedProcess, Mode=TwoWay}"
                     MouseDoubleClick="processList_MouseDoubleClick">
             <ListBox.ItemTemplate>
@@ -53,11 +52,8 @@
                                 Grid.Row="2"
                                 Width="420" Margin="100,10,10,10"
                                 ItemsSource="{Binding Path=Tasks}"
-                                IsEnabled="False"
                                 VerticalAlignment="Top"
-                                HorizontalAlignment="Left"
-                                ScrollViewer.CanContentScroll="True"
-                                ScrollViewer.VerticalScrollBarVisibility="Visible">
+                                HorizontalAlignment="Left">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
@@ -79,9 +75,9 @@
                         <Button Content="Clear" HorizontalAlignment="Left" Click="ClearStrokes_OnClick" Width="50" Margin="10,10,10,10"></Button>
                         <Button Content="Show" HorizontalAlignment="Left" Click="ShowStrokes_OnClick" Width="50" Margin="10,10,10,10"></Button>
                     </StackPanel>
-                    <InkCanvas x:Name="GrabCanvas" EditingMode="Ink" Width="1024" Height="768">
+                    <InkCanvas x:Name="GrabCanvas" EditingMode="Ink" Width="1024" Height="768" UseCustomCursor="True">
                         <InkCanvas.Background>
-                            <ImageBrush ImageSource="{Binding Model.GrabProcess.InkCanvasSource}"/>
+                            <ImageBrush ImageSource="{Binding Model.InkCanvasSource}"/>
                         </InkCanvas.Background>
                     </InkCanvas>
                 </DockPanel>

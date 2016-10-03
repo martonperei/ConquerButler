@@ -52,6 +52,25 @@ namespace ConquerButler
             return p;
         }
 
+        public static bool IsCursorInsideWindow(Point p, Process process)
+        {
+            if (p.X < 0 || p.Y < 0)
+            {
+                return false;
+            }
+
+            RECT rc;
+            ScreenshotHelper.GetWindowRect(process.MainWindowHandle, out rc);
+
+            if (p.X < rc.Width && p.Y < rc.Height)
+            {
+                return true;
+            } else
+            {
+                return false;
+            }
+        }
+
         public static Point MatchRectangleToPoint(Rectangle offset, Rectangle matchRectangle)
         {
             Point p = new Point(offset.X + (matchRectangle.X + matchRectangle.Width / 2),

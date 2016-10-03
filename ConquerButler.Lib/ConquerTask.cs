@@ -36,35 +36,29 @@ namespace ConquerButler
     {
         public const int DEFAULT_PRIORITY = 100;
 
-        protected readonly InputSimulator Simulator;
+        protected readonly InputSimulator Simulator = new InputSimulator();
+        protected readonly TemplateMatchComparer Comparer = new TemplateMatchComparer();
+
         protected readonly ConquerInputScheduler Scheduler;
-        protected TemplateMatchComparer Comparer;
 
         public Process Process { get; }
-        public int Interval { get; set; }
+        public int Interval { get; set; } = 10000;
         public long StartTick { get; set; }
         public long NextRun { get; set; }
-        public bool Enabled { get; set; }
+        public bool Enabled { get; set; } = true;
         public int Priority { get; protected set; } = DEFAULT_PRIORITY;
         public bool IsRunning { get; protected set; }
+        public bool RunsInForeground { get; protected set; } = false;
         public string TaskType { get; protected set; }
-        protected CancellationTokenSource CancellationToken;
+        protected CancellationTokenSource CancellationToken = new CancellationTokenSource();
 
         public virtual string DisplayInfo { get { return $"{TaskType} Running: {IsRunning} Next run: {NextRun} ms"; } }
 
         public ConquerTask(string taskType, ConquerInputScheduler scheduler, Process process)
         {
             TaskType = taskType;
-            Enabled = true;
-
             Scheduler = scheduler;
-            Simulator = new InputSimulator();
             Process = process;
-            Interval = 10000;
-
-            Comparer = new TemplateMatchComparer();
-
-            CancellationToken = new CancellationTokenSource();
         }
 
         public async Task Tick()
@@ -90,16 +84,16 @@ namespace ConquerButler
             CancellationToken.Cancel();
         }
 
-        protected Point GetWindowPointFromInventory(TemplateMatch m)
+        protected Point GetWindowPointFromArea(TemplateMatch m, Rectangle area)
         {
-            return CursorHelper.MatchRectangleToPoint(ConquerControls.INVENTORY, m.Rectangle);
+            return CursorHelper.MatchRectangleToPoint(area, m.Rectangle);
         }
 
         public async Task<bool> RequestInputFocus(Action action, int priority)
         {
             CancellationToken.Token.ThrowIfCancellationRequested();
 
-            var focusAction = Scheduler.RequestInputFocus(this, action, priority);
+            var focusAction = Scheduler.RequestInputFocus(this, action, priority, !RunsInForeground);
 
             await focusAction.TaskCompletion.Task;
 

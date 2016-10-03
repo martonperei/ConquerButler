@@ -21,9 +21,7 @@ namespace ConquerButler.Gui
     public class ConquerProcess
     {
         public Process Process { get; set; }
-        public Bitmap Screenshot { get; set; }
-
-        public BitmapSource InkCanvasSource { get; set; }
+        public Bitmap Screenshot { get; set; } 
 
         public BitmapSource Name
         {
@@ -65,6 +63,7 @@ namespace ConquerButler.Gui
         public ObservableCollection<string> TaskTypes { get; } = new ObservableCollection<string>();
 
         public ConquerProcess SelectedProcess { get; set; }
+        public BitmapSource InkCanvasSource { get; set; }
     }
 
     public partial class MainWindow : Window
@@ -178,13 +177,9 @@ namespace ConquerButler.Gui
             {
                 if (process.Tasks.Count == 0)
                 {
-                    var task = new MineTask(scheduler, process.Process);
-                    process.Tasks.Add(task);
-
-                    var task2 = new HealthTask(scheduler, process.Process);
+                    var task2 = new HuntTask(scheduler, process.Process);
                     process.Tasks.Add(task2);
 
-                    scheduler.Add(task);
                     scheduler.Add(task2);
                 }
             }
@@ -200,10 +195,15 @@ namespace ConquerButler.Gui
 
         private void GrabArea_OnClick(object sender, RoutedEventArgs e)
         {
+            if (Model.SelectedProcess == null)
+            {
+                return;
+            }
+
             var bitmap = ScreenshotHelper.PrintWindow(Model.SelectedProcess.Process);
             Model.SelectedProcess.Screenshot = bitmap;
 
-            Model.SelectedProcess.InkCanvasSource = Imaging.CreateBitmapSourceFromHBitmap(Model.SelectedProcess.Screenshot.GetHbitmap(),
+            Model.InkCanvasSource = Imaging.CreateBitmapSourceFromHBitmap(Model.SelectedProcess.Screenshot.GetHbitmap(),
                 IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
             
             GrabPopup.IsOpen = true;
@@ -243,7 +243,7 @@ namespace ConquerButler.Gui
         private void ClearStrokes_OnClick(object sender, RoutedEventArgs e)
         {
             GrabCanvas.Strokes.Clear();
-            Model.SelectedProcess.InkCanvasSource = Imaging.CreateBitmapSourceFromHBitmap(Model.SelectedProcess.Screenshot.GetHbitmap(),
+            Model.InkCanvasSource = Imaging.CreateBitmapSourceFromHBitmap(Model.SelectedProcess.Screenshot.GetHbitmap(),
                 IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
         }
 
@@ -266,13 +266,16 @@ namespace ConquerButler.Gui
                 stroke.DrawingAttributes.Color = Colors.Transparent;
             }
 
-            Model.SelectedProcess.InkCanvasSource = Imaging.CreateBitmapSourceFromHBitmap(bitmap.GetHbitmap(),
+            Model.InkCanvasSource = Imaging.CreateBitmapSourceFromHBitmap(bitmap.GetHbitmap(),
                       IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
         }
 
         private void processList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            ProcessHelper.SetForegroundWindow(Model.SelectedProcess.Process);
+            if (Model.SelectedProcess != null)
+            {
+                ProcessHelper.SetForegroundWindow(Model.SelectedProcess.Process);
+            }
         }
     }
 }

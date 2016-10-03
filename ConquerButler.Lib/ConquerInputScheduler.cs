@@ -38,6 +38,7 @@ namespace ConquerButler
         public ConquerTask Task { get; set; }
         public Action Action { get; set; }
         public long Priority { get; set; }
+        public bool BringToForeground { get; set; }
         public TaskCompletionSource<bool> TaskCompletion { get; } = new TaskCompletionSource<bool>();
     }
 
@@ -61,13 +62,14 @@ namespace ConquerButler
             Tick = 0;
         }
 
-        public ConquerActionFocus RequestInputFocus(ConquerTask task, Action action, int priority)
+        public ConquerActionFocus RequestInputFocus(ConquerTask task, Action action, int priority, bool bringToForeground)
         {
             ConquerActionFocus focus = new ConquerActionFocus()
             {
-                Priority = priority,
                 Task = task,
-                Action = action
+                Action = action,
+                Priority = priority,
+                BringToForeground = bringToForeground
             };
 
             ActionFocusQueue.Add(focus);
@@ -102,17 +104,35 @@ namespace ConquerButler
 
                         if (actionFocus.Task.Enabled)
                         {
-                            ProcessHelper.SetForegroundWindow(actionFocus.Task.Process);
+                            if (actionFocus.BringToForeground)
+                            {
+                                ProcessHelper.SetForegroundWindow(actionFocus.Task.Process);
 
-                            Wait(500);
+                                Wait(500);
 
-                            actionFocus.Action();
+                                actionFocus.Action();
 
-                            actionFocus.TaskCompletion.SetResult(true);
+                                actionFocus.TaskCompletion.SetResult(true);
+
+                            } else if (ProcessHelper.IsForegroundWindow(actionFocus.Task.Process) && 
+                                CursorHelper.IsCursorInsideWindow(CursorHelper.GetCursorPosition(actionFocus.Task.Process), 
+                                actionFocus.Task.Process))
+                            {
+                                actionFocus.Action();
+
+                                actionFocus.TaskCompletion.SetResult(true);
+                            } else
+                            {
+                                // requeue for future
+                                ActionFocusQueue.Add(actionFocus);
+                            }
                         } else
                         {
                             actionFocus.TaskCompletion.SetCanceled();
+                            ActionFocusQueue.Remove(actionFocus);
                         }
+
+                        Thread.Sleep(TICK_INTERVAL);
                     }
 
                     Thread.Sleep(TICK_INTERVAL);

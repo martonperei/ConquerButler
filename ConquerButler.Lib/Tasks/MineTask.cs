@@ -38,7 +38,7 @@ namespace ConquerButler.Tasks
 
                 await RequestInputFocus(() =>
                 {
-                    LeftClickOnPoint(GetWindowPointFromInventory(m));
+                    LeftClickOnPoint(GetWindowPointFromArea(m, ConquerControls.INVENTORY));
                     Scheduler.Wait(250);
                     LeftClickOnPoint(new Point(700, 100));
                     Scheduler.Wait(250);

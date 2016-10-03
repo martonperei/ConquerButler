@@ -7,26 +7,7 @@ namespace ConquerButler
 {
     public class ImageDetectionHelper
     {
-        public static Bitmap LoadImage(string fileName)
-        {
-            return new Bitmap(fileName).ConvertToFormat(PixelFormat.Format24bppRgb);
-        }
 
-        public static List<TemplateMatch> Detect(float similiarityThreshold, Bitmap sourceImage, params Bitmap[] templates)
-        {
-            ExhaustiveTemplateMatching tm = new ExhaustiveTemplateMatching(similiarityThreshold);
-
-            List<TemplateMatch> matches = new List<TemplateMatch>();
-
-            foreach (Bitmap template in templates)
-            {
-                TemplateMatch[] match = tm.ProcessImage(sourceImage, template);
-
-                matches.AddRange(match);
-            }
-
-            return matches;
-        }
 
         public static void HighlightMatches(Bitmap sourceImage, TemplateMatch[] matches)
         {

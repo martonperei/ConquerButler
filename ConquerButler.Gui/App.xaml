@@ -4,6 +4,5 @@
              xmlns:local="clr-namespace:ConquerButler.Gui"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <local:InvertBooleanConverter x:Key="boolConvert"/>
     </Application.Resources>
 </Application>

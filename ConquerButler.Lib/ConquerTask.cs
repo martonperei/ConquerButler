@@ -7,6 +7,7 @@ using AForge.Imaging;
 using PropertyChanged;
 using System;
 using System.Threading;
+using System.Drawing.Imaging;
 
 namespace ConquerButler
 {
@@ -48,6 +49,7 @@ namespace ConquerButler
         public bool Enabled { get; set; } = true;
         public int Priority { get; protected set; } = DEFAULT_PRIORITY;
         public bool IsRunning { get; protected set; }
+        public bool IsPaused { get; protected set; }
         public bool RunsInForeground { get; protected set; } = false;
         public string TaskType { get; protected set; }
         protected CancellationTokenSource CancellationToken = new CancellationTokenSource();
@@ -84,9 +86,30 @@ namespace ConquerButler
             CancellationToken.Cancel();
         }
 
+        protected Bitmap LoadImage(string fileName)
+        {
+            return new Bitmap(fileName).ConvertToFormat(PixelFormat.Format24bppRgb);
+        }
+
+        public static List<TemplateMatch> Detect(float similiarityThreshold, Bitmap sourceImage, params Bitmap[] templates)
+        {
+            ExhaustiveTemplateMatching tm = new ExhaustiveTemplateMatching(similiarityThreshold);
+
+            List<TemplateMatch> matches = new List<TemplateMatch>();
+
+            foreach (Bitmap template in templates)
+            {
+                TemplateMatch[] match = tm.ProcessImage(sourceImage, template);
+
+                matches.AddRange(match);
+            }
+
+            return matches;
+        }
+
         protected Point GetWindowPointFromArea(TemplateMatch m, Rectangle area)
         {
-            return CursorHelper.MatchRectangleToPoint(area, m.Rectangle);
+            return NativeMethods.MatchRectangleToPoint(area, m.Rectangle);
         }
 
         public async Task<bool> RequestInputFocus(Action action, int priority)
@@ -102,25 +125,20 @@ namespace ConquerButler
 
         protected void LeftClickOnPoint(Point p)
         {
-            CursorHelper.ClientToVirtualScreen(Process, ref p);
+            NativeMethods.ClientToVirtualScreen(Process, ref p);
 
             Simulator.Mouse.MoveMouseTo(p.X, p.Y);
             Simulator.Mouse.LeftButtonClick();
         }
 
-        protected Bitmap LoadImage(string fileName)
-        {
-            return ImageDetectionHelper.LoadImage(fileName);
-        }
-
         protected Bitmap Snapshot(Rectangle rect)
         {
-            return ScreenshotHelper.PrintWindow(Process, rect);
+            return NativeMethods.PrintWindow(Process, rect);
         }
 
         protected List<TemplateMatch> FindMatches(float similiarity, Bitmap source, params Bitmap[] templates)
         {
-            List<TemplateMatch>  matches = ImageDetectionHelper.Detect(0.95f, source, templates);
+            List<TemplateMatch> matches = Detect(0.95f, source, templates);
 
             matches.Sort(Comparer);
 

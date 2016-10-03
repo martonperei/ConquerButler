@@ -5,10 +5,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Ink;
 using System.Windows.Input;
-using System.Windows.Interop;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ConquerButler.Tasks;
@@ -21,28 +18,28 @@ namespace ConquerButler.Gui
     public class ConquerProcess
     {
         public Process Process { get; set; }
-        public Bitmap Screenshot { get; set; } 
+        public Bitmap Screenshot { get; set; }
 
         public BitmapSource Name
         {
             get
             {
-                return Imaging.CreateBitmapSourceFromHBitmap(
-                    ScreenshotHelper.CropBitmap(Screenshot, new Rectangle(108, 130, 100, 11)).GetHbitmap(),
-                    IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                using (var cropped = NativeMethods.CropBitmap(Screenshot, new Rectangle(108, 130, 100, 11)))
+                {
+                    return cropped.ToBitmapSource();
+                }
             }
         }
 
         public BitmapSource Thumbnail
         {
-            get {
-                return Imaging.CreateBitmapSourceFromHBitmap(Screenshot.GetHbitmap(),
-                          IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            get
+            {
+                return Screenshot.ToBitmapSource();
             }
         }
 
         public Point MousePosition { get; set; }
-
         public ObservableCollection<ConquerTask> Tasks { get; } = new ObservableCollection<ConquerTask>();
 
         public void CancelTasks()
@@ -60,10 +57,8 @@ namespace ConquerButler.Gui
     public class ConquerButlerModel
     {
         public ObservableCollection<ConquerProcess> Processes { get; } = new ObservableCollection<ConquerProcess>();
-        public ObservableCollection<string> TaskTypes { get; } = new ObservableCollection<string>();
 
         public ConquerProcess SelectedProcess { get; set; }
-        public BitmapSource InkCanvasSource { get; set; }
     }
 
     public partial class MainWindow : Window
@@ -80,13 +75,11 @@ namespace ConquerButler.Gui
         {
             InitializeComponent();
 
-            refreshProcesses.Tick += RefreshProcessesOnTick;
+            refreshProcesses.Tick += (s, o) => RefreshProcesses();
             refreshProcesses.Interval = new TimeSpan(0, 0, 5);
 
-            refreshMouse.Tick += RefreshMouseOnTick;
+            refreshMouse.Tick += (s, o) => RefreshMouseOnTick();
             refreshMouse.Interval = new TimeSpan(0, 0, 0, 0, 100);
-
-            Model.TaskTypes.Add("mine");
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -110,27 +103,24 @@ namespace ConquerButler.Gui
             }
         }
 
-        private void RefreshMouseOnTick(object sender, EventArgs eventArgs)
+        private void RefreshMouseOnTick()
         {
-            foreach (ConquerProcess process in Model.Processes) {
-                if (ProcessHelper.IsForegroundWindow(process.Process))
+            foreach (ConquerProcess process in Model.Processes)
+            {
+                if (NativeMethods.IsForegroundWindow(process.Process))
                 {
-                    process.MousePosition = CursorHelper.GetCursorPosition(process.Process);
-                } else
+                    process.MousePosition = NativeMethods.GetCursorPosition(process.Process);
+                }
+                else
                 {
                     process.MousePosition = new Point(0, 0);
                 }
             }
         }
 
-        private void RefreshProcessesOnTick(object sender, System.EventArgs e)
-        {
-            RefreshProcesses();
-        }
-
         private void RefreshProcesses()
         {
-            foreach (Process process in ProcessHelper.GetProcesses("Zonquer"))
+            foreach (Process process in NativeMethods.GetProcesses("Zonquer"))
             {
                 ConquerProcess conquerProcess = Model.Processes.SingleOrDefault(c => c.Process.Id == process.Id);
 
@@ -147,14 +137,14 @@ namespace ConquerButler.Gui
                     Model.Processes.Add(conquerProcess);
                 }
 
-                var bitmap = ScreenshotHelper.PrintWindow(process);
+                var bitmap = NativeMethods.PrintWindow(process);
                 conquerProcess.Screenshot = bitmap;
             }
         }
 
         private void ConquerProcessOnExited(object sender, EventArgs eventArgs)
         {
-            Process process = (Process) sender;
+            Process process = (Process)sender;
 
             ConquerProcess conquerProcess = Model.Processes.Single(c => c.Process.Id == process.Id);
 
@@ -166,7 +156,7 @@ namespace ConquerButler.Gui
         private void ShowWindow_OnClick(object sender, RoutedEventArgs e)
         {
             ConquerProcess process = (sender as Button).DataContext as ConquerProcess;
-            ProcessHelper.SetForegroundWindow(process.Process);
+            NativeMethods.SetForegroundWindow(process.Process);
 
             RefreshProcesses();
         }
@@ -200,81 +190,16 @@ namespace ConquerButler.Gui
                 return;
             }
 
-            var bitmap = ScreenshotHelper.PrintWindow(Model.SelectedProcess.Process);
-            Model.SelectedProcess.Screenshot = bitmap;
-
-            Model.InkCanvasSource = Imaging.CreateBitmapSourceFromHBitmap(Model.SelectedProcess.Screenshot.GetHbitmap(),
-                IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-            
-            GrabPopup.IsOpen = true;
-        }
-
-        private void CloseGrab_OnClick(object sender, RoutedEventArgs e)
-        {
-            foreach (Stroke stroke in GrabCanvas.Strokes)
-            {
-                stroke.DrawingAttributes.Color = Colors.Red;
-
-                Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog
-                {
-                    FileName = "Template",
-                    DefaultExt = ".png",
-                    Filter = "Image (.png)|*.png"
-                };
-
-                bool? result = dlg.ShowDialog();
-
-                if (result.HasValue && result.Value)
-                {
-                    Rect rect = stroke.GetBounds();
-                    Bitmap bitmap = ScreenshotHelper.CropBitmap(Model.SelectedProcess.Screenshot,
-                        new Rectangle((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height));
-
-                    bitmap.Save(dlg.FileName);
-                }
-
-                stroke.DrawingAttributes.Color = Colors.Transparent;
-            }
-
-            GrabCanvas.Strokes.Clear();
-            GrabPopup.IsOpen = false;
-        }
-
-        private void ClearStrokes_OnClick(object sender, RoutedEventArgs e)
-        {
-            GrabCanvas.Strokes.Clear();
-            Model.InkCanvasSource = Imaging.CreateBitmapSourceFromHBitmap(Model.SelectedProcess.Screenshot.GetHbitmap(),
-                IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-        }
-
-        private void ShowStrokes_OnClick(object sender, RoutedEventArgs e)
-        {
-            Bitmap bitmap = new Bitmap(Model.SelectedProcess.Screenshot.Width, Model.SelectedProcess.Screenshot.Height);
-
-            foreach (Stroke stroke in GrabCanvas.Strokes)
-            {
-                Rect rect = stroke.GetBounds();
-
-                Rectangle tr = new Rectangle((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
-
-                using (Graphics g = Graphics.FromImage(bitmap))
-                {
-                    g.DrawImage(Model.SelectedProcess.Screenshot, new Rectangle(tr.X, tr.Y, tr.Width, tr.Height),
-                                     tr, GraphicsUnit.Pixel);
-                }
-
-                stroke.DrawingAttributes.Color = Colors.Transparent;
-            }
-
-            Model.InkCanvasSource = Imaging.CreateBitmapSourceFromHBitmap(bitmap.GetHbitmap(),
-                      IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            GrabWindow grabWindow = new GrabWindow();
+            grabWindow.Model.Process = Model.SelectedProcess;
+            grabWindow.Show();
         }
 
         private void processList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (Model.SelectedProcess != null)
             {
-                ProcessHelper.SetForegroundWindow(Model.SelectedProcess.Process);
+                NativeMethods.SetForegroundWindow(Model.SelectedProcess.Process);
             }
         }
     }

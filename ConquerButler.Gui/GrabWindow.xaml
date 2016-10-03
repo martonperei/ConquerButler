@@ -1,0 +1,21 @@
+﻿<Window x:Class="ConquerButler.Gui.GrabWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ConquerButler.Gui"
+        mc:Ignorable="d"
+        Title="GrabWindow" Height="300" Width="300">
+    <DockPanel>
+        <StackPanel>
+            <Button Content="Save" HorizontalAlignment="Left" Click="SaveGrab_OnClick" Width="50" Margin="10,10,10,10"></Button>
+            <Button Content="Clear" HorizontalAlignment="Left" Click="ClearStrokes_OnClick" Width="50" Margin="10,10,10,10"></Button>
+            <Button Content="Show" HorizontalAlignment="Left" Click="ShowStrokes_OnClick" Width="50" Margin="10,10,10,10"></Button>
+        </StackPanel>
+        <InkCanvas x:Name="GrabCanvas" EditingMode="Ink" Width="1024" Height="768" UseCustomCursor="True">
+            <InkCanvas.Background>
+                <ImageBrush ImageSource="{Binding Model.InkCanvasSource}"/>
+            </InkCanvas.Background>
+        </InkCanvas>
+    </DockPanel>
+</Window>

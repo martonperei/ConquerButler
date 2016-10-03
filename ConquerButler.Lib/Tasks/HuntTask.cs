@@ -13,7 +13,7 @@ namespace ConquerButler.Tasks
         private readonly Bitmap descendTemplate;
         private readonly Bitmap dropTemplate;
 
-        public HuntTask(ConquerInputScheduler scheduler, Process process) 
+        public HuntTask(ConquerInputScheduler scheduler, Process process)
             : base("Hunt", scheduler, process)
         {
             Interval = 1;
@@ -32,19 +32,21 @@ namespace ConquerButler.Tasks
 
         public async override Task DoTick()
         {
+            Snapshot(ConquerControls.CHAT_AREA).Save("Test.png", ImageFormat.Png);
+
             List<TemplateMatch> isXpFly = FindMatches(0.95f, Snapshot(ConquerControls.XP_SKILLS), xpFlyTemplate);
 
             if (isXpFly.Count > 0)
             {
                 await RequestInputFocus(() =>
                 {
-                    Point p = CursorHelper.GetCursorPosition(Process);
+                    Point p = NativeMethods.GetCursorPosition(Process);
 
                     LeftClickOnPoint(GetWindowPointFromArea(isXpFly[0], ConquerControls.XP_SKILLS));
 
                     Scheduler.Wait(250);
 
-                    CursorHelper.ClientToVirtualScreen(Process, ref p);
+                    NativeMethods.ClientToVirtualScreen(Process, ref p);
 
                     Simulator.Mouse.MoveMouseTo(p.X, p.Y);
                 }, 1);

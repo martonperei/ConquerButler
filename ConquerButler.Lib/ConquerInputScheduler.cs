@@ -13,7 +13,7 @@ namespace ConquerButler
         public int Compare(ConquerActionFocus x, ConquerActionFocus y)
         {
             int c = x.Task.Priority.CompareTo(y.Task.Priority);
-            
+
             if (c == 0)
             {
                 c = x.Task.StartTick.CompareTo(y.Task.StartTick);
@@ -24,7 +24,7 @@ namespace ConquerButler
 
                     if (c == 0)
                     {
-                        c = ProcessHelper.IsForegroundWindow(x.Task.Process) ? 1 : -1;
+                        c = NativeMethods.IsForegroundWindow(x.Task.Process) ? 1 : -1;
                     }
                 }
             }
@@ -89,7 +89,7 @@ namespace ConquerButler
 
         public void Wait(int wait)
         {
-            Thread.Sleep(wait + Random.Next(-100, 100));
+            Thread.Sleep(wait + Random.Next(-50, 50));
         }
 
         public void Start()
@@ -106,7 +106,7 @@ namespace ConquerButler
                         {
                             if (actionFocus.BringToForeground)
                             {
-                                ProcessHelper.SetForegroundWindow(actionFocus.Task.Process);
+                                NativeMethods.SetForegroundWindow(actionFocus.Task.Process);
 
                                 Wait(500);
 
@@ -114,19 +114,22 @@ namespace ConquerButler
 
                                 actionFocus.TaskCompletion.SetResult(true);
 
-                            } else if (ProcessHelper.IsForegroundWindow(actionFocus.Task.Process) && 
-                                CursorHelper.IsCursorInsideWindow(CursorHelper.GetCursorPosition(actionFocus.Task.Process), 
-                                actionFocus.Task.Process))
+                            }
+                            else if (NativeMethods.IsForegroundWindow(actionFocus.Task.Process) &&
+                              NativeMethods.IsCursorInsideWindow(NativeMethods.GetCursorPosition(actionFocus.Task.Process),
+                              actionFocus.Task.Process))
                             {
                                 actionFocus.Action();
 
                                 actionFocus.TaskCompletion.SetResult(true);
-                            } else
+                            }
+                            else
                             {
                                 // requeue for future
                                 ActionFocusQueue.Add(actionFocus);
                             }
-                        } else
+                        }
+                        else
                         {
                             actionFocus.TaskCompletion.SetCanceled();
                             ActionFocusQueue.Remove(actionFocus);
@@ -149,6 +152,7 @@ namespace ConquerButler
                         {
                             if (task.NextRun <= 0)
                             {
+                                // TODO: start task
                                 task.Tick();
                             }
                             else

@@ -1,5 +1,9 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.Drawing.Imaging;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media.Imaging;
 
 namespace ConquerButler
 {
@@ -13,6 +17,20 @@ namespace ConquerButler
                 gr.DrawImage(image, new Rectangle(0, 0, copy.Width, copy.Height));
             }
             return copy;
+        }
+
+        public static BitmapSource ToBitmapSource(this Bitmap bitmap)
+        {
+            IntPtr hbitmap = bitmap.GetHbitmap();
+            try
+            {
+                return Imaging.CreateBitmapSourceFromHBitmap(hbitmap,
+                    IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            }
+            finally
+            {
+                NativeMethods.DeleteObject(hbitmap);
+            }
         }
     }
 }

@@ -21,7 +21,7 @@ namespace ConquerButler.Tasks
 
         public override string DisplayInfo { get { return $"{TaskType} State: {healthState} | Running: {IsRunning} Next run: {NextRun} ms"; } }
 
-        public HealthTask( ConquerInputScheduler scheduler, Process process) 
+        public HealthTask(ConquerInputScheduler scheduler, Process process)
             : base("Health", scheduler, process)
         {
             hpTemplate = LoadImage("images/lowhp.png");

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Threading.Tasks;
 using AForge.Imaging;
@@ -21,7 +20,7 @@ namespace ConquerButler.Tasks
 
         public override string DisplayInfo { get { return $"{TaskType} State: {healthState} | Running: {IsRunning} Next run: {NextRun} ms"; } }
 
-        public HealthTask(ConquerInputScheduler scheduler, Process process)
+        public HealthTask(ConquerInputScheduler scheduler, ConquerProcess process)
             : base("Health", scheduler, process)
         {
             hpTemplate = LoadImage("images/lowhp.png");
@@ -33,13 +32,13 @@ namespace ConquerButler.Tasks
 
         public override Task DoTick()
         {
-            List<TemplateMatch> matches = FindMatches(0.95f, Snapshot(ConquerControls.HEALTH), hpTemplate);
+            List<TemplateMatch> matches = Process.FindMatches(0.95f, ConquerControls.HEALTH, hpTemplate);
 
             if (matches.Count > 0)
             {
                 if (healthState == HealthState.Normal)
                 {
-                    Process.CloseMainWindow();
+                    Process.InternalProcess.CloseMainWindow();
                 }
                 else
                 {
@@ -52,6 +51,13 @@ namespace ConquerButler.Tasks
             }
 
             return Task.FromResult(true);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            hpTemplate.Dispose();
         }
     }
 }

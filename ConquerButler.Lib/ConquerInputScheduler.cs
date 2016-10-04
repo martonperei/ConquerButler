@@ -5,6 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Canary.Core;
+using System.Diagnostics;
+using System.Collections.ObjectModel;
+using log4net;
 
 namespace ConquerButler
 {
@@ -24,7 +27,7 @@ namespace ConquerButler
 
                     if (c == 0)
                     {
-                        c = NativeMethods.IsForegroundWindow(x.Task.Process) ? 1 : -1;
+                        c = Helpers.IsForegroundWindow(x.Task.Process.InternalProcess) ? 1 : -1;
                     }
                 }
             }
@@ -42,24 +45,135 @@ namespace ConquerButler
         public TaskCompletionSource<bool> TaskCompletion { get; } = new TaskCompletionSource<bool>();
     }
 
-    public class ConquerInputScheduler
+    public class ConquerInputScheduler : IDisposable
     {
-        private const int TICK_INTERVAL = 100;
+        private static ILog log = LogManager.GetLogger(typeof(ConquerInputScheduler));
 
-        private readonly List<ConquerTask> Tasks;
+        public const string CONQUER_PROCESS_NAME = "Zonquer";
 
+        public ObservableCollection<ConquerProcess> Processes { get; set; }
+        protected ConcurrentQueue<ConquerProcess> EndedProcesses { get; }
+        protected ConcurrentQueue<ConquerProcess> StartedProcesses { get; }
+
+        public ObservableCollection<ConquerTask> Tasks { get; set; }
         private PriorityQueue<ConquerActionFocus> ActionFocusQueue;
-        private Random Random;
 
-        public long Tick { get; protected set; }
+        private ProcessWatcher ProcessWatcher;
+
+        public bool IsRunning { get; protected set; }
+        public long CurrentTick { get; protected set; }
+        private Task ActionTask;
+        private CancellationTokenSource ActionTaskCancellation;
+
+        private Random Random;
 
         public ConquerInputScheduler()
         {
-            Tasks = new List<ConquerTask>();
+            Processes = new ObservableCollection<ConquerProcess>();
+            EndedProcesses = new ConcurrentQueue<ConquerProcess>();
+            StartedProcesses = new ConcurrentQueue<ConquerProcess>();
+            Tasks = new ObservableCollection<ConquerTask>();
             ActionFocusQueue = new PriorityQueue<ConquerActionFocus>(new ActionFocusComparer());
             Random = new Random();
 
-            Tick = 0;
+            CurrentTick = 0;
+
+            InitializeProcesses();
+        }
+
+        public void Start()
+        {
+            ActionTaskCancellation = new CancellationTokenSource();
+            ActionTask = Task.Factory.StartNew(DoActions, ActionTaskCancellation.Token);
+        }
+
+        public void Stop()
+        {
+            ActionTaskCancellation.Cancel();
+        }
+
+        private void DoActions()
+        {
+            IsRunning = true;
+
+            while (!ActionTaskCancellation.IsCancellationRequested)
+            {
+                while (EndedProcesses.Count > 0)
+                {
+                    ConquerProcess process;
+
+                    EndedProcesses.TryDequeue(out process);
+
+                    if (process != null)
+                    {
+                        Processes.Remove(process);
+                    }
+                }
+
+                while (StartedProcesses.Count > 0)
+                {
+                    ConquerProcess process;
+
+                    StartedProcesses.TryDequeue(out process);
+
+                    if (process != null)
+                    {
+                        Processes.Add(process);
+                    }
+                }
+
+                foreach (ConquerProcess process in Processes)
+                {
+                    process.Refresh();
+                }
+
+                foreach (ConquerTask task in Tasks)
+                {
+                    task.Tick(1);
+                }
+
+                while (ActionFocusQueue.Count > 0)
+                {
+                    ConquerActionFocus actionFocus = ActionFocusQueue.Take();
+
+                    if (actionFocus.Task.Enabled)
+                    {
+                        if (actionFocus.BringToForeground)
+                        {
+                            Helpers.SetForegroundWindow(actionFocus.Task.Process.InternalProcess);
+
+                            Wait(500);
+
+                            actionFocus.Action();
+
+                            actionFocus.TaskCompletion.SetResult(true);
+
+                        }
+                        else if (Helpers.IsForegroundWindow(actionFocus.Task.Process.InternalProcess) &&
+                          Helpers.IsCursorInsideWindow(Helpers.GetCursorPosition(actionFocus.Task.Process.InternalProcess),
+                          actionFocus.Task.Process.InternalProcess))
+                        {
+                            actionFocus.Action();
+
+                            actionFocus.TaskCompletion.SetResult(true);
+                        }
+                        else
+                        {
+                            // requeue for future
+                            ActionFocusQueue.Add(actionFocus);
+                        }
+                    }
+                    else
+                    {
+                        actionFocus.TaskCompletion.SetCanceled();
+                        ActionFocusQueue.Remove(actionFocus);
+                    }
+                }
+
+                Thread.Sleep(1);
+            }
+
+            IsRunning = false;
         }
 
         public ConquerActionFocus RequestInputFocus(ConquerTask task, Action action, int priority, bool bringToForeground)
@@ -87,88 +201,70 @@ namespace ConquerButler
             Tasks.Remove(task);
         }
 
+        public void CancelRunning()
+        {
+            ActionFocusQueue.Clear();
+
+            foreach (ConquerProcess process in Processes)
+            {
+                process.Cancel();
+            }
+        }
+
         public void Wait(int wait)
         {
             Thread.Sleep(wait + Random.Next(-50, 50));
         }
 
-        public void Start()
+        void InitializeProcesses()
         {
-            Task.Factory.StartNew(() =>
-            {
-                while (true)
-                {
-                    while (ActionFocusQueue.Count > 0)
-                    {
-                        ConquerActionFocus actionFocus = ActionFocusQueue.Take();
+            log.Info("Initializing processes...");
 
-                        if (actionFocus.Task.Enabled)
-                        {
-                            if (actionFocus.BringToForeground)
-                            {
-                                NativeMethods.SetForegroundWindow(actionFocus.Task.Process);
+            ProcessWatcher = new ProcessWatcher(CONQUER_PROCESS_NAME);
+            ProcessWatcher.ProcessStarted += ProcessWatcher_ProcessStarted;
+            ProcessWatcher.ProcessEnded += ProcessWatcher_ProcessEnded;
 
-                                Wait(500);
+            ProcessWatcher.Start();
+        }
 
-                                actionFocus.Action();
+        private void ProcessWatcher_ProcessEnded(Process process)
+        {
+            ConquerProcess conquerProcess = Processes.FirstOrDefault(c => c.InternalProcess.Id == process.Id);
 
-                                actionFocus.TaskCompletion.SetResult(true);
+            EndedProcesses.Enqueue(conquerProcess);
+        }
 
-                            }
-                            else if (NativeMethods.IsForegroundWindow(actionFocus.Task.Process) &&
-                              NativeMethods.IsCursorInsideWindow(NativeMethods.GetCursorPosition(actionFocus.Task.Process),
-                              actionFocus.Task.Process))
-                            {
-                                actionFocus.Action();
-
-                                actionFocus.TaskCompletion.SetResult(true);
-                            }
-                            else
-                            {
-                                // requeue for future
-                                ActionFocusQueue.Add(actionFocus);
-                            }
-                        }
-                        else
-                        {
-                            actionFocus.TaskCompletion.SetCanceled();
-                            ActionFocusQueue.Remove(actionFocus);
-                        }
-
-                        Thread.Sleep(TICK_INTERVAL);
-                    }
-
-                    Thread.Sleep(TICK_INTERVAL);
-                }
-            });
-
-            Task.Factory.StartNew(() =>
-            {
-                while (true)
-                {
-                    foreach (ConquerTask task in Tasks)
-                    {
-                        if (task.Enabled && !task.IsRunning)
-                        {
-                            if (task.NextRun <= 0)
-                            {
-                                // TODO: start task
-                                task.Tick();
-                            }
-                            else
-                            {
-                                task.NextRun -= TICK_INTERVAL;
-                            }
-                        }
-                    }
-
-                    Thread.Sleep(TICK_INTERVAL);
-                }
-            });
+        private void ProcessWatcher_ProcessStarted(Process process)
+        {
+            StartedProcesses.Enqueue(new ConquerProcess(process));
         }
 
         public void Clear()
         {
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~ConquerInputScheduler()
+        {
+            Dispose(false);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                Stop();
+
+                foreach (ConquerProcess process in Processes)
+                {
+                    process.Dispose();
+                }
+            }
         }
     }
 }

@@ -8,6 +8,8 @@ using PropertyChanged;
 using System;
 using System.Threading;
 using System.Drawing.Imaging;
+using System.ComponentModel;
+using log4net;
 
 namespace ConquerButler
 {
@@ -33,16 +35,15 @@ namespace ConquerButler
     }
 
     [ImplementPropertyChanged]
-    public abstract class ConquerTask
+    public abstract class ConquerTask : IDisposable, INotifyPropertyChanged
     {
-        public const int DEFAULT_PRIORITY = 100;
+        private static ILog log = LogManager.GetLogger(typeof(ConquerTask));
 
-        protected readonly InputSimulator Simulator = new InputSimulator();
-        protected readonly TemplateMatchComparer Comparer = new TemplateMatchComparer();
+        public const int DEFAULT_PRIORITY = 100;
 
         protected readonly ConquerInputScheduler Scheduler;
 
-        public Process Process { get; }
+        public ConquerProcess Process { get; }
         public int Interval { get; set; } = 10000;
         public long StartTick { get; set; }
         public long NextRun { get; set; }
@@ -52,32 +53,66 @@ namespace ConquerButler
         public bool IsPaused { get; protected set; }
         public bool RunsInForeground { get; protected set; } = false;
         public string TaskType { get; protected set; }
-        protected CancellationTokenSource CancellationToken = new CancellationTokenSource();
+
+        protected CancellationTokenSource CancellationToken;
+        protected Task CurrentTask;
 
         public virtual string DisplayInfo { get { return $"{TaskType} Running: {IsRunning} Next run: {NextRun} ms"; } }
 
-        public ConquerTask(string taskType, ConquerInputScheduler scheduler, Process process)
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public ConquerTask(string taskType, ConquerInputScheduler scheduler, ConquerProcess process)
         {
             TaskType = taskType;
             Scheduler = scheduler;
             Process = process;
+
+            Process.Tasks.Add(this);
         }
 
-        public async Task Tick()
+        public Task Tick(int interval)
         {
-            IsRunning = true;
+            if (Enabled && !IsRunning)
+            {
+                if (NextRun <= 0)
+                {
+                    CancellationToken = new CancellationTokenSource();
 
-            StartTick = Scheduler.Tick;
-            NextRun = -1;
+                    CurrentTask = Task.Run(() => {
+                        IsRunning = true;
 
-            await DoTick();
+                        StartTick = Scheduler.CurrentTick;
+                        NextRun = -1;
 
-            NextRun = Interval;
+                        DoTick();
 
-            IsRunning = false;
+                        NextRun = Interval;
+
+                        IsRunning = false;
+                    }, CancellationToken.Token);
+
+                    return CurrentTask;
+                }
+                else
+                {
+                    NextRun -= interval;
+                }
+            }
+
+            return null;
         }
 
         public abstract Task DoTick();
+
+        public void Pause()
+        {
+            Enabled = false;
+        }
+
+        public void Resume()
+        {
+            Enabled = true;
+        }
 
         public void Cancel()
         {
@@ -91,27 +126,6 @@ namespace ConquerButler
             return new Bitmap(fileName).ConvertToFormat(PixelFormat.Format24bppRgb);
         }
 
-        public static List<TemplateMatch> Detect(float similiarityThreshold, Bitmap sourceImage, params Bitmap[] templates)
-        {
-            ExhaustiveTemplateMatching tm = new ExhaustiveTemplateMatching(similiarityThreshold);
-
-            List<TemplateMatch> matches = new List<TemplateMatch>();
-
-            foreach (Bitmap template in templates)
-            {
-                TemplateMatch[] match = tm.ProcessImage(sourceImage, template);
-
-                matches.AddRange(match);
-            }
-
-            return matches;
-        }
-
-        protected Point GetWindowPointFromArea(TemplateMatch m, Rectangle area)
-        {
-            return NativeMethods.MatchRectangleToPoint(area, m.Rectangle);
-        }
-
         public async Task<bool> RequestInputFocus(Action action, int priority)
         {
             CancellationToken.Token.ThrowIfCancellationRequested();
@@ -121,28 +135,6 @@ namespace ConquerButler
             await focusAction.TaskCompletion.Task;
 
             return focusAction.TaskCompletion.Task.Result;
-        }
-
-        protected void LeftClickOnPoint(Point p)
-        {
-            NativeMethods.ClientToVirtualScreen(Process, ref p);
-
-            Simulator.Mouse.MoveMouseTo(p.X, p.Y);
-            Simulator.Mouse.LeftButtonClick();
-        }
-
-        protected Bitmap Snapshot(Rectangle rect)
-        {
-            return NativeMethods.PrintWindow(Process, rect);
-        }
-
-        protected List<TemplateMatch> FindMatches(float similiarity, Bitmap source, params Bitmap[] templates)
-        {
-            List<TemplateMatch> matches = Detect(0.95f, source, templates);
-
-            matches.Sort(Comparer);
-
-            return matches;
         }
 
         protected bool Equals(ConquerTask other)
@@ -161,6 +153,25 @@ namespace ConquerButler
         public override int GetHashCode()
         {
             return TaskType.GetHashCode();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~ConquerTask()
+        {
+            Dispose(false);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                Cancel();
+            }
         }
     }
 }

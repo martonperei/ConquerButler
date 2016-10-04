@@ -16,6 +16,7 @@ using System.Windows;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: System.Windows.Media.DisableDpiAwareness]
+[assembly: log4net.Config.XmlConfigurator(Watch = true)]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 

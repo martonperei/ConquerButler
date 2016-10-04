@@ -49,6 +49,10 @@
       <HintPath>..\packages\AForge.Math.2.2.5\lib\AForge.Math.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="log4net, Version=1.2.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PropertyChanged, Version=1.51.3.0, Culture=neutral, PublicKeyToken=ee3ee20bcf148ddd, processorArchitecture=MSIL">
       <HintPath>..\packages\PropertyChanged.Fody.1.51.3\lib\dotnet\PropertyChanged.dll</HintPath>
@@ -74,9 +78,11 @@
     <Compile Include="BitmapExtensions.cs" />
     <Compile Include="ConquerControls.cs" />
     <Compile Include="ConquerInputScheduler.cs" />
+    <Compile Include="ConquerProcess.cs" />
     <Compile Include="ConquerTask.cs" />
+    <Compile Include="Helpers.cs" />
+    <Compile Include="ProcessWatcher.cs" />
     <Compile Include="Tasks\HealthTask.cs" />
-    <Compile Include="ImageDetectionHelper.cs" />
     <Compile Include="Tasks\HuntTask.cs" />
     <Compile Include="Tasks\MineTask.cs" />
     <Compile Include="PriorityQueue.cs" />

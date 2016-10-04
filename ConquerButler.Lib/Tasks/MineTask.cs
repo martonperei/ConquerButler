@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Threading.Tasks;
 using AForge.Imaging;
@@ -17,18 +16,18 @@ namespace ConquerButler.Tasks
 
         public override string DisplayInfo { get { return $"{TaskType} Ores: {OreCount} | Running: {IsRunning} Next run: {NextRun} ms"; } }
 
-        public MineTask(ConquerInputScheduler scheduler, Process process)
+        public MineTask(ConquerInputScheduler scheduler, ConquerProcess process)
             : base("Mine", scheduler, process)
         {
             copperoreTemplate = LoadImage("images/copperore.png");
             ironoreTemplate = LoadImage("images/ironore.png");
 
-            Interval = 60000;
+            Interval = 10000;
         }
 
         public override async Task DoTick()
         {
-            List<TemplateMatch> matches = FindMatches(0.95f, Snapshot(ConquerControls.INVENTORY), ironoreTemplate, copperoreTemplate);
+            List<TemplateMatch> matches = Process.FindMatches(0.95f, ConquerControls.INVENTORY, ironoreTemplate, copperoreTemplate);
 
             OreCount = matches.Count;
 
@@ -38,14 +37,22 @@ namespace ConquerButler.Tasks
 
                 await RequestInputFocus(() =>
                 {
-                    LeftClickOnPoint(GetWindowPointFromArea(m, ConquerControls.INVENTORY));
+                    Process.LeftClickOnPoint(Process.GetWindowPointFromArea(m, ConquerControls.INVENTORY));
                     Scheduler.Wait(250);
-                    LeftClickOnPoint(new Point(700, 100));
+                    Process.LeftClickOnPoint(new Point(700, 100));
                     Scheduler.Wait(250);
                 }, i);
 
                 OreCount--;
             }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            copperoreTemplate.Dispose();
+            ironoreTemplate.Dispose();
         }
     }
 }

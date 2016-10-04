@@ -1,15 +1,35 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
-using System.Runtime.Remoting.Contexts;
 using System.Text;
-using System.Linq;
 
 namespace ConquerButler
 {
+    public enum DeviceCap
+    {
+        VERTRES = 10,
+        DESKTOPVERTRES = 117,
+    }
+
+    public enum PROCESS_DPI_AWARENESS
+    {
+        Process_DPI_Unaware = 0,
+        Process_System_DPI_Aware = 1,
+        Process_Per_Monitor_DPI_Aware = 2
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct POINT
+    {
+        public int X;
+        public int Y;
+
+        public static implicit operator Point(POINT point)
+        {
+            return new Point(point.X, point.Y);
+        }
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     struct RECT
     {
@@ -135,269 +155,46 @@ namespace ConquerButler
         }
     }
 
-    public enum PROCESS_DPI_AWARENESS
+    internal class NativeMethods
     {
-        Process_DPI_Unaware = 0,
-        Process_System_DPI_Aware = 1,
-        Process_Per_Monitor_DPI_Aware = 2
-    }
+        [DllImport("gdi32.dll")]
+        internal static extern bool DeleteObject(IntPtr hObject);
 
-    [StructLayout(LayoutKind.Sequential)]
-    struct POINT
-    {
-        public int X;
-        public int Y;
-
-        public static implicit operator Point(POINT point)
-        {
-            return new Point(point.X, point.Y);
-        }
-    }
-
-    public class NativeMethods
-    {
         [DllImport("user32.dll")]
         internal static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
         [DllImport("user32.dll")]
         internal static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, int nFlags);
 
+        internal const uint SW_RESTORE = 0x09;
         [DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-        [DllImport("user32.dll")]
-        private static extern IntPtr GetForegroundWindow();
-
-        [DllImport("user32.dll")]
-        private static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
-
-        [DllImport("SHCore.dll", SetLastError = true)]
-        public static extern bool SetProcessDpiAwareness(PROCESS_DPI_AWARENESS awareness);
-        [DllImport("SHCore.dll", SetLastError = true)]
-        public static extern void GetProcessDpiAwareness(IntPtr hprocess, out PROCESS_DPI_AWARENESS awareness);
+        internal static extern int ShowWindow(IntPtr hWnd, uint Msg);
 
         [DllImport("user32.dll")]
-        private static extern int ShowWindow(IntPtr hWnd, uint Msg);
-
-        private const uint SW_RESTORE = 0x09;
-
+        internal static extern bool SetForegroundWindow(IntPtr hWnd);
         [DllImport("user32.dll")]
-        private static extern bool GetCursorPos(out POINT lpPoint);
-
-        [DllImport("User32.Dll")]
-        private static extern long SetCursorPos(int x, int y);
-
-        [DllImport("user32.dll")]
-        private static extern bool ClientToScreen(IntPtr hWnd, ref Point lpPoint);
-
-        [DllImport("user32.dll")]
-        private static extern bool ScreenToClient(IntPtr hWnd, ref Point lpPoint);
-
-        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
-        public static extern bool DeleteObject(IntPtr hObject);
-
-        public static Point GetCursorPosition(Process process)
-        {
-            POINT lpPoint;
-            GetCursorPos(out lpPoint);
-
-            Point p = new Point(lpPoint.X, lpPoint.Y);
-
-            ScreenToClient(process.MainWindowHandle, ref p);
-
-            return p;
-        }
-
-        public static Point SetCursorPosition(Process process, Point p)
-        {
-            ClientToScreen(process.MainWindowHandle, ref p);
-
-            SetCursorPos(p.X, p.Y);
-
-            return p;
-        }
-
-        public static bool IsCursorInsideWindow(Point p, Process process)
-        {
-            if (p.X < 0 || p.Y < 0)
-            {
-                return false;
-            }
-
-            RECT rc;
-            GetWindowRect(process.MainWindowHandle, out rc);
-
-            if (p.X < rc.Width && p.Y < rc.Height)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public static Point MatchRectangleToPoint(Rectangle offset, Rectangle matchRectangle)
-        {
-            Point p = new Point(offset.X + (matchRectangle.X + matchRectangle.Width / 2),
-                offset.Top + (matchRectangle.Y + matchRectangle.Height / 2));
-
-            return p;
-        }
-
-        public static Point ClientToVirtualScreen(Process process, Rectangle rect)
-        {
-            Point p = new Point(rect.X + rect.Width / 2, rect.Y + rect.Height / 2);
-
-            ClientToVirtualScreen(process, ref p);
-
-            return p;
-        }
-
-        public static void ClientToVirtualScreen(Process process, ref Point p)
-        {
-            Rectangle screenBounds = System.Windows.Forms.Screen.PrimaryScreen.Bounds;
-
-            ClientToScreen(process.MainWindowHandle, ref p);
-
-            p.X = p.X * 65535 / screenBounds.Width;
-            p.Y = p.Y * 65535 / screenBounds.Height;
-        }
-
-        public static bool IsForegroundWindow(Process process)
-        {
-            return GetForegroundWindow() == process.MainWindowHandle;
-        }
-
-        public static bool SetForegroundWindow(Process process)
-        {
-            if (IsForegroundWindow(process))
-            {
-                return true;
-            }
-
-            SetForegroundWindow(process.MainWindowHandle);
-
-            Stopwatch clock = new Stopwatch();
-            clock.Start();
-
-            while (GetForegroundWindow() != process.MainWindowHandle)
-            {
-                if (clock.ElapsedMilliseconds > 2000)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        public static string GetWindowTitle(IntPtr handle)
-        {
-            const int nChars = 256;
-            StringBuilder Buff = new StringBuilder(nChars);
-
-            if (GetWindowText(handle, Buff, nChars) > 0)
-            {
-                return Buff.ToString();
-            }
-            return null;
-        }
-
-        public static string GetActiveWindowTitle()
-        {
-            const int nChars = 256;
-            StringBuilder Buff = new StringBuilder(nChars);
-            IntPtr handle = GetForegroundWindow();
-
-            if (GetWindowText(handle, Buff, nChars) > 0)
-            {
-                return Buff.ToString();
-            }
-            return null;
-        }
-
-        public static IEnumerable<Process> GetProcesses(string processName)
-        {
-            return Process.GetProcesses().Where(process => process.ProcessName.StartsWith(processName));
-        }
-
-        public static Bitmap CropBitmap(Bitmap bitmap, Rectangle tr)
-        {
-            using (Bitmap target = new Bitmap(tr.Width, tr.Height))
-            {
-                using (Graphics g = Graphics.FromImage(target))
-                {
-                    g.DrawImage(bitmap, new Rectangle(0, 0, target.Width, target.Height),
-                                     tr,
-                                     GraphicsUnit.Pixel);
-                }
-
-                return target.ConvertToFormat(PixelFormat.Format24bppRgb);
-            }
-        }
-
-        public static Bitmap PrintWindow(Process process)
-        {
-            RECT rc;
-            GetWindowRect(process.MainWindowHandle, out rc);
-
-            if (rc.Width == 0 || rc.Height == 0)
-            {
-                return null;
-            }
-
-            using (Bitmap bmp = new Bitmap(rc.Width, rc.Height, PixelFormat.Format32bppArgb))
-            {
-                using (Graphics gfxBmp = Graphics.FromImage(bmp))
-                {
-                    IntPtr hdcBitmap = gfxBmp.GetHdc();
-                    try
-                    {
-                        PrintWindow(process.MainWindowHandle, hdcBitmap, 0);
-                    }
-                    finally
-                    {
-                        gfxBmp.ReleaseHdc(hdcBitmap);
-                    }
-                }
-
-                return bmp.ConvertToFormat(PixelFormat.Format24bppRgb);
-            }
-        }
-
-        public static Bitmap PrintWindow(Process process, Rectangle rectangle)
-        {
-            using (Bitmap bmp = PrintWindow(process))
-            {
-                return CropBitmap(bmp, rectangle);
-            }
-        }
+        internal static extern IntPtr GetForegroundWindow();
 
         [DllImport("gdi32.dll")]
-        static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
-        public enum DeviceCap
-        {
-            VERTRES = 10,
-            DESKTOPVERTRES = 117,
-        }
+        internal static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
 
-        public static float GetScalingFactor(Process process)
-        {
-            using (Graphics g = Graphics.FromHwnd(process.MainWindowHandle))
-            {
-                IntPtr desktop = g.GetHdc();
-                try
-                {
-                    int LogicalScreenHeight = GetDeviceCaps(desktop, (int)DeviceCap.VERTRES);
-                    int PhysicalScreenHeight = GetDeviceCaps(desktop, (int)DeviceCap.DESKTOPVERTRES);
+        [DllImport("user32.dll")]
+        internal static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
 
-                    float ScreenScalingFactor = (float)PhysicalScreenHeight / (float)LogicalScreenHeight;
+        [DllImport("SHCore.dll", SetLastError = true)]
+        internal static extern bool SetProcessDpiAwareness(PROCESS_DPI_AWARENESS awareness);
+        [DllImport("SHCore.dll", SetLastError = true)]
+        internal static extern void GetProcessDpiAwareness(IntPtr hprocess, out PROCESS_DPI_AWARENESS awareness);
 
-                    return ScreenScalingFactor; // 1.25 = 125%
-                } finally
-                {
-                    DeleteObject(desktop);
-                }
-            }
-        }
+        [DllImport("user32.dll")]
+        internal static extern bool GetCursorPos(out POINT lpPoint);
+
+        [DllImport("User32.Dll")]
+        internal static extern long SetCursorPos(int x, int y);
+
+        [DllImport("user32.dll")]
+        internal static extern bool ClientToScreen(IntPtr hWnd, ref Point lpPoint);
+
+        [DllImport("user32.dll")]
+        internal static extern bool ScreenToClient(IntPtr hWnd, ref Point lpPoint);
     }
 }

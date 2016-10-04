@@ -15,13 +15,12 @@ namespace ConquerButler.Gui
 
         private const int HOTKEY_ID = 9000;
 
-        //Modifiers:
         private const uint MOD_NONE = 0x0000; //(none)
         private const uint MOD_ALT = 0x0001; //ALT
         private const uint MOD_CONTROL = 0x0002; //CTRL
         private const uint MOD_SHIFT = 0x0004; //SHIFT
         private const uint MOD_WIN = 0x0008; //WINDOWS
-        //CAPS LOCK:
+
         private const uint VK_CAPITAL = 0x14;
 
         private IntPtr _windowHandle;

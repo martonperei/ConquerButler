@@ -1,32 +1,66 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using System.Windows.Threading;
 using ConquerButler.Tasks;
-using Point = System.Drawing.Point;
 using PropertyChanged;
+using System.Windows.Threading;
+using System.Drawing;
+using System.Windows.Media.Imaging;
+using System.Collections.Specialized;
+using System.Linq;
+using System.ComponentModel;
+using log4net;
+using log4net.Config;
 
 namespace ConquerButler.Gui
 {
     [ImplementPropertyChanged]
-    public class ConquerProcess
+    public class ConquerTaskModel
     {
-        public Process Process { get; set; }
+        public ConquerTask ConquerTask { get; set; }
+
+        public string DisplayInfo { get; protected set; }
+
+        public ConquerTaskModel(ConquerTask task)
+        {
+            ConquerTask = task;
+
+            ConquerTask.PropertyChanged += ConquerTask_PropertyChanged;
+        }
+
+        private void ConquerTask_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName.Equals("DisplayInfo"))
+            {
+                DisplayInfo = ConquerTask.DisplayInfo;
+            }
+        }
+    }
+
+    [ImplementPropertyChanged]
+    public class ConquerProcessModel
+    {
+        public ConquerProcess ConquerProcess { get; set; }
+
+        public ObservableCollection<ConquerTaskModel> Tasks { get; set; } = new ObservableCollection<ConquerTaskModel>();
+
         public Bitmap Screenshot { get; set; }
 
         public BitmapSource Name
         {
             get
             {
-                using (var cropped = NativeMethods.CropBitmap(Screenshot, new Rectangle(108, 130, 100, 11)))
+                if (Screenshot != null)
                 {
-                    return cropped.ToBitmapSource();
+                    using (var cropped = Helpers.CropBitmap(Screenshot, new Rectangle(108, 130, 100, 11)))
+                    {
+                        return cropped.ToBitmapSource();
+                    }
+                }
+                else
+                {
+                    return null;
                 }
             }
         }
@@ -35,51 +69,71 @@ namespace ConquerButler.Gui
         {
             get
             {
-                return Screenshot.ToBitmapSource();
+                return Screenshot?.ToBitmapSource();
             }
         }
 
-        public Point MousePosition { get; set; }
-        public ObservableCollection<ConquerTask> Tasks { get; } = new ObservableCollection<ConquerTask>();
-
-        public void CancelTasks()
+        public ConquerProcessModel(ConquerProcess process)
         {
-            foreach (ConquerTask task in Tasks)
-            {
-                task.Cancel();
-            }
+            ConquerProcess = process;
 
-            Application.Current.Dispatcher.Invoke(() => { Tasks.Clear(); });
+            process.Tasks.CollectionChanged += Tasks_CollectionChanged;
+
+            Refresh();
+        }
+
+        private void Tasks_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                switch (e.Action)
+                {
+                    case NotifyCollectionChangedAction.Add:
+                        foreach (ConquerTask task in e.NewItems)
+                        {
+                            Tasks.Add(new ConquerTaskModel(task));
+                        }
+                        break;
+                    case NotifyCollectionChangedAction.Remove:
+                        foreach (ConquerTask task in e.OldItems)
+                        {
+                            Tasks.Remove(Tasks.First(m => m.ConquerTask == task));
+                        }
+                        break;
+                }
+            });
+        }
+
+        public void Refresh()
+        {
+            Screenshot?.Dispose();
+
+            Screenshot = Helpers.PrintWindow(ConquerProcess.InternalProcess);
         }
     }
 
     [ImplementPropertyChanged]
     public class ConquerButlerModel
     {
-        public ObservableCollection<ConquerProcess> Processes { get; } = new ObservableCollection<ConquerProcess>();
+        public ObservableCollection<ConquerProcessModel> Processes { get; set; } = new ObservableCollection<ConquerProcessModel>();
 
-        public ConquerProcess SelectedProcess { get; set; }
+        public ConquerProcessModel SelectedProcess { get; set; }
     }
 
     public partial class MainWindow : Window
     {
+        private static ILog log = LogManager.GetLogger(typeof(MainWindow));
+
         public ConquerButlerModel Model { get; } = new ConquerButlerModel();
 
-        private readonly DispatcherTimer refreshProcesses = new DispatcherTimer();
-        private readonly DispatcherTimer refreshMouse = new DispatcherTimer();
+        private readonly DispatcherTimer updateScreenshot = new DispatcherTimer();
+        private ConquerInputScheduler scheduler;
 
-        private readonly ConquerInputScheduler scheduler = new ConquerInputScheduler();
         private GlobalHotkey globalHotkey;
 
         public MainWindow()
         {
             InitializeComponent();
-
-            refreshProcesses.Tick += (s, o) => RefreshProcesses();
-            refreshProcesses.Interval = new TimeSpan(0, 0, 5);
-
-            refreshMouse.Tick += (s, o) => RefreshMouseOnTick();
-            refreshMouse.Interval = new TimeSpan(0, 0, 0, 0, 100);
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -87,99 +141,71 @@ namespace ConquerButler.Gui
             globalHotkey = new GlobalHotkey(this);
             globalHotkey.HotkeyPressed += GlobalHotkeyOnHotkeyPressed;
 
+            scheduler = new ConquerInputScheduler();
+            scheduler.Processes.CollectionChanged += Processes_CollectionChanged;
             scheduler.Start();
 
-            refreshMouse.Start();
-            refreshProcesses.Start();
+            updateScreenshot.Tick += (s, o) =>
+            {
+                foreach (ConquerProcessModel process in Model.Processes)
+                {
+                    process.Refresh();
+                }
+            };
+            updateScreenshot.Interval = new TimeSpan(0, 0, 0, 10);
+            updateScreenshot.Start();
 
-            RefreshProcesses();
+            log.Info("Initialized Window");
+        }
+
+        private void Processes_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                switch (e.Action)
+                {
+                    case NotifyCollectionChangedAction.Add:
+                        foreach (ConquerProcess process in e.NewItems)
+                        {
+                            Model.Processes.Add(new ConquerProcessModel(process));
+                        }
+                        break;
+                    case NotifyCollectionChangedAction.Remove:
+                        foreach (ConquerProcess process in e.OldItems)
+                        {
+                            Model.Processes.Remove(Model.Processes.First(m => m.ConquerProcess == process));
+                        }
+                        break;
+                }
+            });
         }
 
         private void GlobalHotkeyOnHotkeyPressed(object sender, EventArgs eventArgs)
         {
-            foreach (ConquerProcess process in Model.Processes)
-            {
-                process.CancelTasks();
-            }
-        }
-
-        private void RefreshMouseOnTick()
-        {
-            foreach (ConquerProcess process in Model.Processes)
-            {
-                if (NativeMethods.IsForegroundWindow(process.Process))
-                {
-                    process.MousePosition = NativeMethods.GetCursorPosition(process.Process);
-                }
-                else
-                {
-                    process.MousePosition = new Point(0, 0);
-                }
-            }
-        }
-
-        private void RefreshProcesses()
-        {
-            foreach (Process process in NativeMethods.GetProcesses("Zonquer"))
-            {
-                ConquerProcess conquerProcess = Model.Processes.SingleOrDefault(c => c.Process.Id == process.Id);
-
-                if (conquerProcess == null)
-                {
-                    process.EnableRaisingEvents = true;
-                    process.Exited += ConquerProcessOnExited;
-
-                    conquerProcess = new ConquerProcess()
-                    {
-                        Process = process
-                    };
-
-                    Model.Processes.Add(conquerProcess);
-                }
-
-                var bitmap = NativeMethods.PrintWindow(process);
-                conquerProcess.Screenshot = bitmap;
-            }
-        }
-
-        private void ConquerProcessOnExited(object sender, EventArgs eventArgs)
-        {
-            Process process = (Process)sender;
-
-            ConquerProcess conquerProcess = Model.Processes.Single(c => c.Process.Id == process.Id);
-
-            conquerProcess.CancelTasks();
-
-            Application.Current.Dispatcher.Invoke(() => { Model.Processes.Remove(conquerProcess); });
-        }
-
-        private void ShowWindow_OnClick(object sender, RoutedEventArgs e)
-        {
-            ConquerProcess process = (sender as Button).DataContext as ConquerProcess;
-            NativeMethods.SetForegroundWindow(process.Process);
-
-            RefreshProcesses();
+            scheduler.CancelRunning();
         }
 
         private void StartTasks_OnClick(object sender, RoutedEventArgs e)
         {
-            foreach (ConquerProcess process in Model.Processes)
+            foreach (ConquerProcessModel process in Model.Processes)
             {
                 if (process.Tasks.Count == 0)
                 {
-                    var task2 = new HuntTask(scheduler, process.Process);
-                    process.Tasks.Add(task2);
-
+                    var task2 = new MineTask(scheduler, process.ConquerProcess);
                     scheduler.Add(task2);
+                }
+                else
+                {
+                    process.ConquerProcess.Resume();
                 }
             }
         }
 
         private void StopTasks_OnClick(object sender, RoutedEventArgs e)
         {
-            foreach (ConquerProcess process in Model.Processes)
+            foreach (ConquerProcessModel process in Model.Processes)
             {
-                process.CancelTasks();
+                process.ConquerProcess.Pause();
             }
         }
 
@@ -190,8 +216,10 @@ namespace ConquerButler.Gui
                 return;
             }
 
+            Model.SelectedProcess.Refresh();
+
             GrabWindow grabWindow = new GrabWindow();
-            grabWindow.Model.Process = Model.SelectedProcess;
+            grabWindow.Model.ScreenshotCopy = Model.SelectedProcess.Screenshot.Clone() as Bitmap;
             grabWindow.Show();
         }
 
@@ -199,8 +227,14 @@ namespace ConquerButler.Gui
         {
             if (Model.SelectedProcess != null)
             {
-                NativeMethods.SetForegroundWindow(Model.SelectedProcess.Process);
+                Helpers.SetForegroundWindow(Model.SelectedProcess.ConquerProcess.InternalProcess);
             }
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            scheduler.Dispose();
+            scheduler = null;
         }
     }
 }

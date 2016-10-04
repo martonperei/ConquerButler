@@ -1,8 +1,6 @@
 ﻿using AForge.Imaging;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.Threading.Tasks;
 
 namespace ConquerButler.Tasks
@@ -13,7 +11,7 @@ namespace ConquerButler.Tasks
         private readonly Bitmap descendTemplate;
         private readonly Bitmap dropTemplate;
 
-        public HuntTask(ConquerInputScheduler scheduler, Process process)
+        public HuntTask(ConquerInputScheduler scheduler, ConquerProcess process)
             : base("Hunt", scheduler, process)
         {
             Interval = 1;
@@ -27,58 +25,65 @@ namespace ConquerButler.Tasks
 
         public bool IsFlying()
         {
-            return FindMatches(0.95f, Snapshot(ConquerControls.XP_SKILLS), descendTemplate).Count > 0;
+            return Process.FindMatches(0.95f, ConquerControls.XP_SKILLS, descendTemplate).Count > 0;
         }
 
         public async override Task DoTick()
         {
-            Snapshot(ConquerControls.CHAT_AREA).Save("Test.png", ImageFormat.Png);
-
-            List<TemplateMatch> isXpFly = FindMatches(0.95f, Snapshot(ConquerControls.XP_SKILLS), xpFlyTemplate);
+            List<TemplateMatch> isXpFly = Process.FindMatches(0.95f, ConquerControls.XP_SKILLS, xpFlyTemplate);
 
             if (isXpFly.Count > 0)
             {
                 await RequestInputFocus(() =>
                 {
-                    Point p = NativeMethods.GetCursorPosition(Process);
+                    Point p = Helpers.GetCursorPosition(Process.InternalProcess);
 
-                    LeftClickOnPoint(GetWindowPointFromArea(isXpFly[0], ConquerControls.XP_SKILLS));
+                    Process.LeftClickOnPoint(Process.GetWindowPointFromArea(isXpFly[0], ConquerControls.XP_SKILLS));
 
                     Scheduler.Wait(250);
 
-                    NativeMethods.ClientToVirtualScreen(Process, ref p);
+                    Helpers.ClientToVirtualScreen(Process.InternalProcess, ref p);
 
-                    Simulator.Mouse.MoveMouseTo(p.X, p.Y);
+                    Process.Simulator.Mouse.MoveMouseTo(p.X, p.Y);
                 }, 1);
             }
 
-            List<TemplateMatch> isDrop = FindMatches(0.95f, Snapshot(ConquerControls.CHAT_AREA), dropTemplate);
+            List<TemplateMatch> isDrop = Process.FindMatches(0.95f, ConquerControls.CHAT_AREA, dropTemplate);
 
             if (isDrop.Count > 0)
             {
                 await RequestInputFocus(() =>
                 {
-                    LeftClickOnPoint(GetWindowPointFromArea(isDrop[0], ConquerControls.CHAT_AREA));
+                    Process.LeftClickOnPoint(Process.GetWindowPointFromArea(isDrop[0], ConquerControls.CHAT_AREA));
                 }, 1);
             }
 
             await RequestInputFocus(() =>
             {
-                Simulator.Mouse.RightButtonClick();
+                Process.Simulator.Mouse.RightButtonClick();
                 Scheduler.Wait(125);
             }, 1);
 
             await RequestInputFocus(() =>
             {
-                Simulator.Mouse.LeftButtonClick();
+                Process.Simulator.Mouse.LeftButtonClick();
                 Scheduler.Wait(125);
             }, 1);
 
             await RequestInputFocus(() =>
             {
-                Simulator.Mouse.RightButtonClick();
+                Process.Simulator.Mouse.RightButtonClick();
                 Scheduler.Wait(125);
             }, 1);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            xpFlyTemplate.Dispose();
+            descendTemplate.Dispose();
+            dropTemplate.Dispose();
         }
     }
 }

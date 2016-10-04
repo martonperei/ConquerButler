@@ -11,7 +11,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.ComponentModel;
 using log4net;
-using log4net.Config;
+using System.Reactive.Linq;
 
 namespace ConquerButler.Gui
 {
@@ -26,7 +26,10 @@ namespace ConquerButler.Gui
         {
             ConquerTask = task;
 
-            ConquerTask.PropertyChanged += ConquerTask_PropertyChanged;
+            Observable.FromEventPattern<PropertyChangedEventArgs>(ConquerTask, "PropertyChanged")
+                .Where((e) => { return e.EventArgs.PropertyName.Equals("DisplayInfo"); })
+                .Buffer(TimeSpan.FromSeconds(0.1))
+                .Subscribe(e => DisplayInfo = ConquerTask.DisplayInfo);
         }
 
         private void ConquerTask_PropertyChanged(object sender, PropertyChangedEventArgs e)

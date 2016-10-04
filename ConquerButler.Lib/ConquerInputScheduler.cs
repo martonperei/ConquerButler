@@ -78,17 +78,23 @@ namespace ConquerButler
 
             CurrentTick = 0;
 
-            InitializeProcesses();
+            ProcessWatcher = new ProcessWatcher(CONQUER_PROCESS_NAME);
+            ProcessWatcher.ProcessStarted += ProcessWatcher_ProcessStarted;
+            ProcessWatcher.ProcessEnded += ProcessWatcher_ProcessEnded;
         }
 
         public void Start()
         {
+            ProcessWatcher.Start();
+
             ActionTaskCancellation = new CancellationTokenSource();
             ActionTask = Task.Factory.StartNew(DoActions, ActionTaskCancellation.Token);
         }
 
         public void Stop()
         {
+            ProcessWatcher.Stop();
+
             ActionTaskCancellation.Cancel();
         }
 
@@ -214,17 +220,6 @@ namespace ConquerButler
         public void Wait(int wait)
         {
             Thread.Sleep(wait + Random.Next(-50, 50));
-        }
-
-        void InitializeProcesses()
-        {
-            log.Info("Initializing processes...");
-
-            ProcessWatcher = new ProcessWatcher(CONQUER_PROCESS_NAME);
-            ProcessWatcher.ProcessStarted += ProcessWatcher_ProcessStarted;
-            ProcessWatcher.ProcessEnded += ProcessWatcher_ProcessEnded;
-
-            ProcessWatcher.Start();
         }
 
         private void ProcessWatcher_ProcessEnded(Process process)

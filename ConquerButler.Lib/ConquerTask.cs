@@ -39,17 +39,19 @@ namespace ConquerButler
 
         public const int DEFAULT_PRIORITY = 100;
 
-        protected readonly ConquerInputScheduler Scheduler;
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected readonly ConquerScheduler Scheduler;
 
         public ConquerProcess Process { get; }
-        public int Interval { get; set; } = 10000;
+        public double Interval { get; set; } = 10;
         public long StartTick { get; set; }
-        public long NextRun { get; set; }
+        public double NextRun { get; set; }
         public bool Enabled { get; set; } = true;
         public int Priority { get; protected set; } = DEFAULT_PRIORITY;
         public bool IsRunning { get; protected set; }
         public bool IsPaused { get; protected set; }
-        public bool RunsInForeground { get; protected set; } = false;
+        public bool NeedsUserFocus { get; protected set; } = false;
         public string TaskType { get; protected set; }
 
         protected CancellationTokenSource CancellationToken;
@@ -57,30 +59,40 @@ namespace ConquerButler
 
         public virtual string DisplayInfo { get { return $"{TaskType} Running: {IsRunning} Next run: {NextRun} ms"; } }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public ConquerTask(string taskType, ConquerInputScheduler scheduler, ConquerProcess process)
+        public ConquerTask(string taskType, ConquerProcess process)
         {
             TaskType = taskType;
-            Scheduler = scheduler;
+            Scheduler = process.Scheduler;
             Process = process;
-
-            Process.Tasks.Add(this);
         }
 
-        public Task Tick(int interval)
+        public void Start()
+        {
+            Process.AddTask(this);
+        }
+
+        public void Stop()
+        {
+            Cancel();
+
+            Process.RemoveTask(this);
+        }
+
+        public void Tick(double dt)
         {
             if (Enabled && !IsRunning)
             {
                 if (NextRun <= 0)
                 {
+                    log.Info($"{TaskType} Running");
+
+                    IsRunning = true;
+
                     CancellationToken = new CancellationTokenSource();
 
                     CurrentTask = Task.Run(async () =>
                     {
-                        IsRunning = true;
-
-                        StartTick = Scheduler.CurrentTick;
+                        StartTick = Scheduler.Clock.Tick;
                         NextRun = -1;
 
                         try
@@ -94,16 +106,12 @@ namespace ConquerButler
                             IsRunning = false;
                         }
                     }, CancellationToken.Token);
-
-                    return CurrentTask;
                 }
                 else
                 {
-                    NextRun -= interval;
+                    NextRun -= dt;
                 }
             }
-
-            return null;
         }
 
         public abstract Task DoTick();
@@ -129,14 +137,17 @@ namespace ConquerButler
 
         protected Bitmap LoadImage(string fileName)
         {
-            return new Bitmap(fileName).ConvertToFormat(PixelFormat.Format24bppRgb);
+            using (var bmp = new Bitmap(fileName))
+            {
+                return bmp.ConvertToFormat(PixelFormat.Format24bppRgb);
+            }
         }
 
         public async Task<bool> RequestInputFocus(Action action, int priority)
         {
             CancellationToken.Token.ThrowIfCancellationRequested();
 
-            var focusAction = Scheduler.RequestInputFocus(this, action, priority, !RunsInForeground);
+            var focusAction = Scheduler.RequestInputFocus(this, action, priority, !NeedsUserFocus);
 
             await focusAction.TaskCompletion.Task;
 

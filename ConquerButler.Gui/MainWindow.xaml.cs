@@ -157,7 +157,7 @@ namespace ConquerButler.Gui
         public ConquerButlerModel Model { get; } = new ConquerButlerModel();
 
         private readonly DispatcherTimer updateScreenshot = new DispatcherTimer();
-        private ConquerInputScheduler scheduler;
+        private ConquerScheduler scheduler;
 
         private GlobalHotkey globalHotkey;
 
@@ -169,12 +169,12 @@ namespace ConquerButler.Gui
         protected override void OnSourceInitialized(EventArgs e)
         {
             globalHotkey = new GlobalHotkey(this);
-            globalHotkey.HotkeyPressed += GlobalHotkeyOnHotkeyPressed;
+            globalHotkey.HotkeyPressed += (s, e2) => scheduler.CancelRunning();
 
-            scheduler = new ConquerInputScheduler();
+            scheduler = new ConquerScheduler();
             scheduler.Processes.CollectionChanged += Processes_CollectionChanged;
             scheduler.Start();
-
+            
             updateScreenshot.Tick += (s, o) =>
             {
                 foreach (ConquerProcessModel process in Model.Processes)
@@ -186,6 +186,12 @@ namespace ConquerButler.Gui
             updateScreenshot.Start();
 
             log.Info("Initialized Window");
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            scheduler.Dispose();
+            scheduler = null;
         }
 
         private void Processes_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -210,22 +216,17 @@ namespace ConquerButler.Gui
             });
         }
 
-        private void GlobalHotkeyOnHotkeyPressed(object sender, EventArgs eventArgs)
-        {
-            scheduler.CancelRunning();
-        }
-
         private void StartTasks_OnClick(object sender, RoutedEventArgs e)
         {
             foreach (ConquerProcessModel process in Model.Processes)
             {
                 if (process.Tasks.Count == 0)
                 {
-                    var task2 = new MiningTask(scheduler, process.ConquerProcess);
-                    scheduler.Add(task2);
+                    var task2 = new MiningTask(process.ConquerProcess);
+                    task2.Start();
 
-                    var task3 = new HealthWatcherTask(scheduler, process.ConquerProcess);
-                    scheduler.Add(task3);
+                    var task3 = new HealthWatcherTask(process.ConquerProcess);
+                    task3.Start();
                 }
                 else
                 {
@@ -262,12 +263,6 @@ namespace ConquerButler.Gui
             {
                 Helpers.SetForegroundWindow(Model.SelectedProcess.ConquerProcess.InternalProcess);
             }
-        }
-
-        private void Window_Closed(object sender, EventArgs e)
-        {
-            scheduler.Dispose();
-            scheduler = null;
         }
     }
 }

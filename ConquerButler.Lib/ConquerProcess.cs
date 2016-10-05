@@ -2,6 +2,7 @@
 using log4net;
 using PropertyChanged;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -16,36 +17,84 @@ namespace ConquerButler
     {
         private static ILog log = LogManager.GetLogger(typeof(ConquerProcess));
 
+        public ConquerScheduler Scheduler { get; protected set; }
+        public Process InternalProcess { get; protected set; }
         public bool Invalid { get; protected set; }
-        public Process InternalProcess { get; set; }
-
         public Point MousePosition { get; set; }
-        public ObservableCollection<ConquerTask> Tasks { get; }
+        public InputSimulator Simulator { get; protected set; }
 
-        public readonly InputSimulator Simulator = new InputSimulator();
-        protected readonly TemplateMatchComparer Comparer = new TemplateMatchComparer();
+        public ObservableCollection<ConquerTask> Tasks { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public ConquerProcess(Process process)
+        private readonly ConcurrentQueue<ConquerTask> _addedTasks;
+        private readonly ConcurrentQueue<ConquerTask> _removedTasks;
+        private readonly TemplateMatchComparer _templateComparer;
+        private readonly Random _random;
+
+        public ConquerProcess(Process process, ConquerScheduler scheduler)
         {
             InternalProcess = process;
+            Scheduler = scheduler;
             Tasks = new ObservableCollection<ConquerTask>();
+            Simulator = new InputSimulator();
 
-            Refresh();
+            _random = new Random();
+
+            _templateComparer = new TemplateMatchComparer();
+
+            _addedTasks = new ConcurrentQueue<ConquerTask>();
+            _removedTasks = new ConcurrentQueue<ConquerTask>();
         }
 
-        public void Refresh()
+        public void AddTask(ConquerTask task)
         {
-            Point p = Helpers.GetCursorPosition(InternalProcess);
+            _addedTasks.Enqueue(task);
+        }
 
-            if (Helpers.IsForegroundWindow(InternalProcess) && Helpers.IsCursorInsideWindow(p, InternalProcess))
+        public void RemoveTask(ConquerTask task)
+        {
+            _removedTasks.Enqueue(task);
+        }
+
+        public void Tick(double dt)
+        {
+            if (HasUserFocus())
             {
-                MousePosition = p;
+                MousePosition = GetCursorPosition();
             }
             else
             {
                 MousePosition = Point.Empty;
+            }
+
+            while (_removedTasks.Count > 0)
+            {
+                ConquerTask task;
+
+                _removedTasks.TryDequeue(out task);
+
+                if (task != null)
+                {
+                    Tasks.Remove(task);
+                }
+            }
+
+            while (_addedTasks.Count > 0)
+            {
+                ConquerTask task;
+
+                _addedTasks.TryDequeue(out task);
+
+                if (task != null)
+                {
+                    Tasks.Add(task);
+                }
+            }
+
+            foreach (ConquerTask task in Tasks)
+            {
+                task.Tick(dt);
             }
         }
 
@@ -83,44 +132,56 @@ namespace ConquerButler
             }
         }
 
-        protected List<TemplateMatch> Detect(float similiarityThreshold, Bitmap sourceImage, params Bitmap[] templates)
+        public Point GetCursorPosition()
         {
-            ExhaustiveTemplateMatching tm = new ExhaustiveTemplateMatching(similiarityThreshold);
+            return Helpers.GetCursorPosition(InternalProcess);
+        }
 
-            List<TemplateMatch> matches = new List<TemplateMatch>();
-
-            foreach (Bitmap template in templates)
-            {
-                TemplateMatch[] match = tm.ProcessImage(sourceImage, template);
-
-                matches.AddRange(match);
-            }
-
-            return matches;
+        public bool HasUserFocus()
+        {
+            return Helpers.IsForegroundWindow(InternalProcess) &&
+                Helpers.IsCursorInsideWindow(Helpers.GetCursorPosition(InternalProcess), InternalProcess);
         }
 
         public List<TemplateMatch> FindMatches(float similiarity, Rectangle sourceRect, params Bitmap[] templates)
         {
-            using (Bitmap source = Helpers.PrintWindow(InternalProcess, sourceRect))
+            using (Bitmap source = Helpers.PrintWindow(InternalProcess))
             {
-                List<TemplateMatch> matches = Detect(0.95f, source, templates);
+                if (source.Width < source.Width || source.Height < sourceRect.Height)
+                {
+                    return new List<TemplateMatch>();
+                }
 
-                matches.Sort(Comparer);
+                ExhaustiveTemplateMatching tm = new ExhaustiveTemplateMatching(similiarity);
+
+                List<TemplateMatch> matches = new List<TemplateMatch>();
+
+                foreach (Bitmap template in templates)
+                {
+                    TemplateMatch[] match = tm.ProcessImage(source, template, sourceRect);
+
+                    matches.AddRange(match);
+                }
+
+                matches.Sort(_templateComparer);
 
                 return matches;
             }
         }
 
-        public Point GetWindowPointFromArea(TemplateMatch m, Rectangle area)
+        public Point MatchToPoint(TemplateMatch m)
         {
-            return Helpers.MatchRectangleToPoint(area, m.Rectangle);
+            return new Point(m.Rectangle.X + m.Rectangle.Width / 2, m.Rectangle.Y + m.Rectangle.Height / 2);
         }
 
-        public void LeftClickOnPoint(Point p)
+        public void LeftClickOnPoint(Point p, int variation = 5)
         {
             Helpers.ClientToVirtualScreen(InternalProcess, ref p);
 
-            Simulator.Mouse.MoveMouseTo(p.X, p.Y);
+            float x = p.X + _random.Next(-variation, variation);
+            float y = p.Y + _random.Next(-variation, variation);
+
+            Simulator.Mouse.MoveMouseTo(x, y);
             Simulator.Mouse.LeftButtonClick();
         }
 

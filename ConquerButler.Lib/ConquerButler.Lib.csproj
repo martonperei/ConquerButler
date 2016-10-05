@@ -76,9 +76,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BitmapExtensions.cs" />
+    <Compile Include="Clock.cs" />
     <Compile Include="ConcurrentPriorityQueue.cs" />
     <Compile Include="ConquerControls.cs" />
-    <Compile Include="ConquerInputScheduler.cs" />
+    <Compile Include="ConquerScheduler.cs" />
     <Compile Include="ConquerProcess.cs" />
     <Compile Include="ConquerTask.cs" />
     <Compile Include="Helpers.cs" />

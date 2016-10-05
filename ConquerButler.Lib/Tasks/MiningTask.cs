@@ -10,19 +10,17 @@ namespace ConquerButler.Tasks
         private readonly Bitmap copperoreTemplate;
         private readonly Bitmap ironoreTemplate;
 
-        private static object synchronization = new object();
+        public int OreCount { get; protected set; }
 
-        public int OreCount { get; set; }
+        public override string DisplayInfo { get { return $"{TaskType} Ores: {OreCount} | Running: {IsRunning} Next run: {NextRun:F2}s"; } }
 
-        public override string DisplayInfo { get { return $"{TaskType} Ores: {OreCount} | Running: {IsRunning} Next run: {NextRun} ms"; } }
-
-        public MiningTask(ConquerInputScheduler scheduler, ConquerProcess process)
-            : base("Mining", scheduler, process)
+        public MiningTask(ConquerProcess process)
+            : base("Mining", process)
         {
             copperoreTemplate = LoadImage("images/copperore.png");
             ironoreTemplate = LoadImage("images/ironore.png");
 
-            Interval = 60000;
+            Interval = 60;
         }
 
         public override async Task DoTick()
@@ -37,9 +35,9 @@ namespace ConquerButler.Tasks
 
                 await RequestInputFocus(() =>
                 {
-                    Process.LeftClickOnPoint(Process.GetWindowPointFromArea(m, ConquerControls.INVENTORY));
+                    Process.LeftClickOnPoint(Process.MatchToPoint(m));
                     Scheduler.Wait(250);
-                    Process.LeftClickOnPoint(new Point(700, 100));
+                    Process.LeftClickOnPoint(new Point(700, 100), 40);
                     Scheduler.Wait(250);
                 }, i);
 

@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Threading.Tasks;
 using AForge.Imaging;
+using log4net;
 
 namespace ConquerButler.Tasks
 {
@@ -14,22 +15,22 @@ namespace ConquerButler.Tasks
 
     public class HealthWatcherTask : ConquerTask
     {
+        private static ILog log = LogManager.GetLogger(typeof(HealthWatcherTask));
+
         private readonly Bitmap lowhpTemplate;
         private readonly Bitmap fullhpTemplate;
 
-        private HealthState healthState;
+        public HealthState healthState { get; protected set; }
 
-        public override string DisplayInfo { get { return $"{TaskType} State: {healthState} | Running: {IsRunning} Next run: {NextRun} ms"; } }
+        public override string DisplayInfo { get { return $"{TaskType} State: {healthState} | Running: {IsRunning} Next run: {NextRun:F2}s"; } }
 
-        public HealthWatcherTask(ConquerInputScheduler scheduler, ConquerProcess process)
-            : base("HealthWatcher", scheduler, process)
+        public HealthWatcherTask(ConquerProcess process)
+            : base("HealthWatcher", process)
         {
             lowhpTemplate = LoadImage("images/lowhp.png");
             fullhpTemplate = LoadImage("images/fullhp.png");
 
             healthState = HealthState.Unknown;
-
-            Interval = 1000;
         }
 
         public override Task DoTick()

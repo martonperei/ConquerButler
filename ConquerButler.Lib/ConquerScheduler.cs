@@ -44,151 +44,136 @@ namespace ConquerButler
         public TaskCompletionSource<bool> TaskCompletion { get; } = new TaskCompletionSource<bool>();
     }
 
-    public class ConquerInputScheduler : IDisposable
+    public class ConquerScheduler : IDisposable
     {
-        private static ILog log = LogManager.GetLogger(typeof(ConquerInputScheduler));
+        private static ILog log = LogManager.GetLogger(typeof(ConquerScheduler));
 
         public const string CONQUER_PROCESS_NAME = "Zonquer";
 
         public ObservableCollection<ConquerProcess> Processes { get; set; }
-        protected ConcurrentQueue<ConquerProcess> EndedProcesses { get; }
-        protected ConcurrentQueue<ConquerProcess> StartedProcesses { get; }
-
-        public ObservableCollection<ConquerTask> Tasks { get; set; }
-        protected ConcurrentQueue<ConquerTask> AddedTasks { get; }
-        protected ConcurrentQueue<ConquerTask> RemovedTasks { get; }
-
-        private PriorityQueue<ConquerActionFocus> ActionFocusQueue;
-
-        private ProcessWatcher ProcessWatcher;
 
         public bool IsRunning { get; protected set; }
-        public long CurrentTick { get; protected set; }
-        private Task TickTask;
-        private Task ActionTask;
 
-        private Random Random;
+        public double TargetElapsedTime { get; protected set; }
+        public Clock Clock { get; protected set; }
+        private double _frameTime;
+        private double _accumulator;
 
-        public ConquerInputScheduler()
+        private readonly ConcurrentQueue<ConquerProcess> _endedProcesses;
+        private readonly ConcurrentQueue<ConquerProcess> _startedProcesses;
+        private readonly PriorityQueue<ConquerActionFocus> _actionFocusQueue;
+
+        private readonly ProcessWatcher _processWatcher;
+
+        private readonly Random _random;
+
+        private Task _tickTask;
+        private Task _actionTask;
+
+        public ConquerScheduler()
         {
             Processes = new ObservableCollection<ConquerProcess>();
-            EndedProcesses = new ConcurrentQueue<ConquerProcess>();
-            StartedProcesses = new ConcurrentQueue<ConquerProcess>();
+            TargetElapsedTime = 1f / 60.0f;
+            Clock = new Clock();
 
-            Tasks = new ObservableCollection<ConquerTask>();
-            AddedTasks = new ConcurrentQueue<ConquerTask>();
-            RemovedTasks = new ConcurrentQueue<ConquerTask>();
+            _endedProcesses = new ConcurrentQueue<ConquerProcess>();
+            _startedProcesses = new ConcurrentQueue<ConquerProcess>();
 
-            ActionFocusQueue = new ConcurrentPriorityQueue<ConquerActionFocus>(new ActionFocusComparer());
-            Random = new Random();
+            _actionFocusQueue = new ConcurrentPriorityQueue<ConquerActionFocus>(new ActionFocusComparer());
 
-            CurrentTick = 0;
+            _random = new Random();
 
-            ProcessWatcher = new ProcessWatcher(CONQUER_PROCESS_NAME);
-            ProcessWatcher.ProcessStarted += ProcessWatcher_ProcessStarted;
-            ProcessWatcher.ProcessEnded += ProcessWatcher_ProcessEnded;
+            _processWatcher = new ProcessWatcher(CONQUER_PROCESS_NAME);
+            _processWatcher.ProcessStarted += ProcessWatcher_ProcessStarted;
+            _processWatcher.ProcessEnded += ProcessWatcher_ProcessEnded;
         }
 
         public void Start()
         {
             IsRunning = true;
 
-            ProcessWatcher.Start();
+            Clock.Start();
 
-            TickTask = Task.Factory.StartNew(DoTick);
-            ActionTask = Task.Factory.StartNew(DoActions);
+            Clock.Frame();
+
+            _processWatcher.Start();
+
+            _tickTask = Task.Factory.StartNew(TickLoop);
+
+            _actionTask = Task.Factory.StartNew(ActionLoop);
         }
 
         public void Stop()
         {
             IsRunning = false;
 
-            ProcessWatcher.Stop();
+            _processWatcher.Stop();
         }
 
-        private void DoProcesses()
+        protected void FixedTick(double dt)
         {
-            while (EndedProcesses.Count > 0)
-            {
-                ConquerProcess process;
 
-                EndedProcesses.TryDequeue(out process);
-
-                if (process != null)
-                {
-                    Processes.Remove(process);
-                }
-            }
-
-            while (StartedProcesses.Count > 0)
-            {
-                ConquerProcess process;
-
-                StartedProcesses.TryDequeue(out process);
-
-                if (process != null)
-                {
-                    Processes.Add(process);
-                }
-            }
-
-            foreach (ConquerProcess process in Processes)
-            {
-                process.Refresh();
-            }
         }
 
-        private void DoTasks()
-        {
-            while (RemovedTasks.Count > 0)
-            {
-                ConquerTask task;
-
-                RemovedTasks.TryDequeue(out task);
-
-                if (task != null)
-                {
-                    Tasks.Remove(task);
-                }
-            }
-
-            while (AddedTasks.Count > 0)
-            {
-                ConquerTask task;
-
-                AddedTasks.TryDequeue(out task);
-
-                if (task != null)
-                {
-                    Tasks.Add(task);
-                }
-            }
-
-            foreach (ConquerTask task in Tasks)
-            {
-                task.Tick(1);
-            }
-        }
-
-        private void DoTick()
+        private void TickLoop()
         {
             while (IsRunning)
             {
-                DoProcesses();
+                _frameTime = Clock.Frame();
 
-                DoTasks();
+                if (_frameTime > 0.25f) _frameTime = 0.25f;
+
+                _accumulator += _frameTime;
+
+                while (_accumulator >= TargetElapsedTime)
+                {
+                    FixedTick(TargetElapsedTime);
+
+                    _accumulator -= TargetElapsedTime;
+
+                    Clock.FixedUpdate();
+                }
+
+                while (_endedProcesses.Count > 0)
+                {
+                    ConquerProcess process;
+
+                    _endedProcesses.TryDequeue(out process);
+
+                    if (process != null)
+                    {
+                        Processes.Remove(process);
+                    }
+                }
+
+                while (_startedProcesses.Count > 0)
+                {
+                    ConquerProcess process;
+
+                    _startedProcesses.TryDequeue(out process);
+
+                    if (process != null)
+                    {
+                        Processes.Add(process);
+                    }
+                }
+
+                foreach (ConquerProcess process in Processes)
+                {
+                    process.Tick(_frameTime);
+                }
 
                 Thread.Sleep(1);
             }
         }
 
-        private void DoActions()
+        private void ActionLoop()
         {
             while (IsRunning)
             {
-                while (ActionFocusQueue.Count > 0 && IsRunning)
+                while (_actionFocusQueue.Count > 0 && IsRunning)
                 {
-                    ConquerActionFocus actionFocus = ActionFocusQueue.Take();
+                    ConquerActionFocus actionFocus = _actionFocusQueue.Take();
 
                     if (actionFocus.Task.Enabled)
                     {
@@ -212,13 +197,15 @@ namespace ConquerButler
                         else
                         {
                             // requeue for future
-                            ActionFocusQueue.Add(actionFocus);
+                            _actionFocusQueue.Add(actionFocus);
                         }
                     }
                     else
                     {
                         actionFocus.TaskCompletion.SetCanceled();
                     }
+
+                    Thread.Sleep(1);
                 }
 
                 Thread.Sleep(1);
@@ -235,26 +222,16 @@ namespace ConquerButler
                 BringToForeground = bringToForeground
             };
 
-            ActionFocusQueue.Add(focus);
+            _actionFocusQueue.Add(focus);
 
             return focus;
         }
 
-        public void Add(ConquerTask task)
-        {
-            AddedTasks.Enqueue(task);
-        }
-
-        public void Remove(ConquerTask task)
-        {
-            RemovedTasks.Enqueue(task);
-        }
-
         public void CancelRunning()
         {
-            while (ActionFocusQueue.Count > 0)
+            while (_actionFocusQueue.Count > 0)
             {
-                ConquerActionFocus actionFocus = ActionFocusQueue.Take();
+                ConquerActionFocus actionFocus = _actionFocusQueue.Take();
 
                 actionFocus.TaskCompletion.SetCanceled();
             }
@@ -267,19 +244,19 @@ namespace ConquerButler
 
         public void Wait(int wait)
         {
-            Thread.Sleep(wait + Random.Next(-50, 50));
+            Thread.Sleep(wait + _random.Next(-50, 50));
         }
 
         private void ProcessWatcher_ProcessEnded(Process process)
         {
             ConquerProcess conquerProcess = Processes.FirstOrDefault(c => c.InternalProcess.Id == process.Id);
 
-            EndedProcesses.Enqueue(conquerProcess);
+            _endedProcesses.Enqueue(conquerProcess);
         }
 
         private void ProcessWatcher_ProcessStarted(Process process)
         {
-            StartedProcesses.Enqueue(new ConquerProcess(process));
+            _startedProcesses.Enqueue(new ConquerProcess(process, this));
         }
 
         public void Clear()
@@ -292,7 +269,7 @@ namespace ConquerButler
             GC.SuppressFinalize(this);
         }
 
-        ~ConquerInputScheduler()
+        ~ConquerScheduler()
         {
             Dispose(false);
         }

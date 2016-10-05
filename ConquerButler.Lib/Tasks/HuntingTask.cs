@@ -11,12 +11,12 @@ namespace ConquerButler.Tasks
         private readonly Bitmap descendTemplate;
         private readonly Bitmap dropTemplate;
 
-        public HuntingTask(ConquerInputScheduler scheduler, ConquerProcess process)
-            : base("Hunting", scheduler, process)
+        public HuntingTask(ConquerProcess process)
+            : base("Hunting", process)
         {
             Interval = 1;
 
-            RunsInForeground = true;
+            NeedsUserFocus = true;
 
             xpFlyTemplate = LoadImage("images/xpfly.png");
             descendTemplate = LoadImage("images/descend.png");
@@ -36,9 +36,9 @@ namespace ConquerButler.Tasks
             {
                 await RequestInputFocus(() =>
                 {
-                    Point p = Helpers.GetCursorPosition(Process.InternalProcess);
+                    Point p = Process.GetCursorPosition();
 
-                    Process.LeftClickOnPoint(Process.GetWindowPointFromArea(isXpFly[0], ConquerControls.XP_SKILLS));
+                    Process.LeftClickOnPoint(Process.MatchToPoint(isXpFly[0]));
 
                     Scheduler.Wait(250);
 
@@ -54,7 +54,7 @@ namespace ConquerButler.Tasks
             {
                 await RequestInputFocus(() =>
                 {
-                    Process.LeftClickOnPoint(Process.GetWindowPointFromArea(isDrop[0], ConquerControls.CHAT_AREA));
+                    Process.LeftClickOnPoint(Process.MatchToPoint(isDrop[0]));
                 }, 1);
             }
 

@@ -16,37 +16,51 @@ using System.Reactive.Linq;
 namespace ConquerButler.Gui
 {
     [ImplementPropertyChanged]
-    public class ConquerTaskModel
+    public class ConquerTaskModel : INotifyPropertyChanged
     {
         public ConquerTask ConquerTask { get; set; }
 
-        public string DisplayInfo { get; protected set; }
+        public string DisplayInfo
+        {
+            get
+            {
+                return ConquerTask.DisplayInfo;
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public ConquerTaskModel(ConquerTask task)
         {
             ConquerTask = task;
 
             Observable.FromEventPattern<PropertyChangedEventArgs>(ConquerTask, "PropertyChanged")
-                .Where((e) => { return e.EventArgs.PropertyName.Equals("DisplayInfo"); })
+                .Where((e) => e.EventArgs.PropertyName.Equals("DisplayInfo"))
                 .Buffer(TimeSpan.FromSeconds(0.1))
-                .Subscribe(e => DisplayInfo = ConquerTask.DisplayInfo);
-        }
-
-        private void ConquerTask_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName.Equals("DisplayInfo"))
-            {
-                DisplayInfo = ConquerTask.DisplayInfo;
-            }
+                .Subscribe(e =>
+                {
+                    if (e.Count > 0)
+                    {
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(e.First().EventArgs.PropertyName));
+                    }
+                });
         }
     }
 
     [ImplementPropertyChanged]
-    public class ConquerProcessModel
+    public class ConquerProcessModel : INotifyPropertyChanged
     {
         public ConquerProcess ConquerProcess { get; set; }
 
         public ObservableCollection<ConquerTaskModel> Tasks { get; set; } = new ObservableCollection<ConquerTaskModel>();
+
+        public System.Drawing.Point MousePosition
+        {
+            get
+            {
+                return ConquerProcess.MousePosition;
+            }
+        }
 
         public Bitmap Screenshot { get; set; }
 
@@ -76,9 +90,22 @@ namespace ConquerButler.Gui
             }
         }
 
+        public event PropertyChangedEventHandler PropertyChanged;
+
         public ConquerProcessModel(ConquerProcess process)
         {
             ConquerProcess = process;
+
+            Observable.FromEventPattern<PropertyChangedEventArgs>(ConquerProcess, "PropertyChanged")
+                .Where((e) => e.EventArgs.PropertyName.Equals("MousePosition"))
+                .Buffer(TimeSpan.FromSeconds(0.1))
+                .Subscribe(e =>
+                {
+                    if (e.Count > 0)
+                    {
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(e.First().EventArgs.PropertyName));
+                    }
+                });
 
             process.Tasks.CollectionChanged += Tasks_CollectionChanged;
 

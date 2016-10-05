@@ -19,12 +19,12 @@
         </Grid.ColumnDefinitions>
 
         <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left">
-            <Button x:Name="startTasks" Width="60" Height="25" Margin="0,0,0,10"
-                    Content="Start tasks" Click="StartTasks_OnClick"/>
-            <Button x:Name="stopTasks" Width="60" Height="25" Margin="10,0,0,10"
-                    Content="Stop tasks" Click="StopTasks_OnClick"/>
-            <Button x:Name="grabArea" Width="60" Height="25" Margin="10,0,0,10"
-                    Content="Grab area" Click="GrabArea_OnClick"/>
+            <Button x:Name="startTasks" Width="70" Height="25" Margin="0,0,0,10"
+                    Content="Start Tasks" Click="StartTasks_OnClick"/>
+            <Button x:Name="stopTasks" Width="70" Height="25" Margin="10,0,0,10"
+                    Content="Stop Tasks" Click="StopTasks_OnClick"/>
+            <Button x:Name="ScreenshotSelect" Width="70" Height="25" Margin="10,0,0,10"
+                    Content="Screenshot" Click="ScreenshotSelect_OnClick"/>
         </StackPanel>
 
         <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
@@ -45,27 +45,40 @@
                     <Grid ShowGridLines="False" Margin="10,10,10,10">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="160" />
-                            <ColumnDefinition Width="50" />
+                            <ColumnDefinition Width="60" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <Image Grid.RowSpan="2" Grid.Column="0" Width="160" Source="{Binding Path=Thumbnail}"></Image>
+                        <Image Grid.RowSpan="4" Grid.Column="0" Width="160" Source="{Binding Path=Thumbnail}"></Image>
 
                         <Label Grid.Row="0" Grid.Column="1" Content="Name" HorizontalAlignment="Left" VerticalAlignment="Center"></Label>
                         <Image Grid.Row="0" Grid.Column="2" Width="100" Height="11" HorizontalAlignment="Left" VerticalAlignment="Center"
                                Source="{Binding Path=Name}"></Image>
 
                         <Label Grid.Row="1" Grid.Column="1" Content="Tasks" HorizontalAlignment="Left" VerticalAlignment="Center"></Label>
+                        
+                        <Button x:Name="AddTask"
+                                Grid.Row="2" Grid.Column="1"
+                                Width="50" Height="25"
+                            Content="Add" Click="AddTask_Click"/>
+                        <Button x:Name="RemoveTask" 
+                                Grid.Row="3" Grid.Column="1"
+                                Width="50" Height="25"
+                                Content="Remove" Click="RemoveTask_Click"/>
+                        
                         <ListBox x:Name="taskList"
-                                 Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2"
-                                 Height="100" Width="420"
+                                 Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Grid.RowSpan="3"
+                                 Height="100" Width="410"
                                  HorizontalAlignment="Left" VerticalAlignment="Center"
                                  ScrollViewer.CanContentScroll="True"
-                                 ItemsSource="{Binding Path=Tasks}">
+                                 ItemsSource="{Binding Path=Tasks}"
+                                 SelectedItem="{Binding Model.SelectedTask, Mode=TwoWay}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Label Content="{Binding Path=DisplayInfo}"></Label>

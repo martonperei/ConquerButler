@@ -77,6 +77,8 @@ namespace ConquerButler
                 if (task != null)
                 {
                     Tasks.Remove(task);
+
+                    task.Cancel();
                 }
             }
 

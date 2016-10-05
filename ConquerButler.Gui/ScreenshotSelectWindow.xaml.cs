@@ -9,24 +9,24 @@ using System.Windows.Media.Imaging;
 namespace ConquerButler.Gui
 {
     [ImplementPropertyChanged]
-    public class GrabWindowModel
+    public class ScreenshotSelectModel
     {
         public System.Drawing.Bitmap ScreenshotCopy { get; set; }
         public BitmapSource CanvasSource { get; set; }
     }
 
-    public partial class GrabWindow : Window
+    public partial class ScreenshotSelectWindow : Window
     {
-        public GrabWindowModel Model { get; } = new GrabWindowModel();
+        public ScreenshotSelectModel Model { get; } = new ScreenshotSelectModel();
 
         private Point drawingStartPoint;
         private Stroke drawingRectangle;
 
-        public GrabWindow()
+        public ScreenshotSelectWindow()
         {
             InitializeComponent();
 
-            Closed += GrabWindow_Closed;
+            Closed += ScreenshotSelectWindow_Closed;
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -36,7 +36,7 @@ namespace ConquerButler.Gui
             Model.CanvasSource = Model.ScreenshotCopy.ToBitmapSource();
         }
 
-        private void GrabWindow_Closed(object sender, EventArgs e)
+        private void ScreenshotSelectWindow_Closed(object sender, EventArgs e)
         {
             Model.ScreenshotCopy?.Dispose();
         }
@@ -48,23 +48,23 @@ namespace ConquerButler.Gui
 
         private void SwitchMode_OnClick(object sender, RoutedEventArgs e)
         {
-            if (GrabCanvas.EditingMode.Equals(System.Windows.Controls.InkCanvasEditingMode.None))
+            if (ScreenshotCanvas.EditingMode.Equals(System.Windows.Controls.InkCanvasEditingMode.None))
             {
                 EditingModeChooser.Content = "Select";
 
-                GrabCanvas.EditingMode = System.Windows.Controls.InkCanvasEditingMode.EraseByStroke;
+                ScreenshotCanvas.EditingMode = System.Windows.Controls.InkCanvasEditingMode.EraseByStroke;
             }
             else
             {
                 EditingModeChooser.Content = "Erase";
 
-                GrabCanvas.EditingMode = System.Windows.Controls.InkCanvasEditingMode.None;
+                ScreenshotCanvas.EditingMode = System.Windows.Controls.InkCanvasEditingMode.None;
             }
         }
 
         private void Save_OnClick(object sender, RoutedEventArgs e)
         {
-            foreach (Stroke stroke in GrabCanvas.Strokes)
+            foreach (Stroke stroke in ScreenshotCanvas.Strokes)
             {
                 stroke.DrawingAttributes.Color = Colors.Red;
 
@@ -95,7 +95,7 @@ namespace ConquerButler.Gui
 
         private void Canvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            drawingStartPoint = e.GetPosition(GrabCanvas);
+            drawingStartPoint = e.GetPosition(ScreenshotCanvas);
 
             var collection = new StylusPointCollection(5);
             SetPoints(collection, drawingStartPoint.X, drawingStartPoint.Y, 1, 1);
@@ -103,7 +103,7 @@ namespace ConquerButler.Gui
             drawingRectangle = new Stroke(collection);
             drawingRectangle.DrawingAttributes.Color = Colors.Green;
 
-            GrabCanvas.Strokes.Add(drawingRectangle);
+            ScreenshotCanvas.Strokes.Add(drawingRectangle);
         }
 
         private void Canvas_MouseMove(object sender, MouseEventArgs e)
@@ -113,7 +113,7 @@ namespace ConquerButler.Gui
                 return;
             }
 
-            var pos = e.GetPosition(GrabCanvas);
+            var pos = e.GetPosition(ScreenshotCanvas);
 
             var x = Math.Min(pos.X, drawingStartPoint.X);
             var y = Math.Min(pos.Y, drawingStartPoint.Y);

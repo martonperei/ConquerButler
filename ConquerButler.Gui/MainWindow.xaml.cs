@@ -12,6 +12,7 @@ using System.Linq;
 using System.ComponentModel;
 using log4net;
 using System.Reactive.Linq;
+using System.Windows.Controls;
 
 namespace ConquerButler.Gui
 {
@@ -53,6 +54,8 @@ namespace ConquerButler.Gui
         public ConquerProcess ConquerProcess { get; set; }
 
         public ObservableCollection<ConquerTaskModel> Tasks { get; set; } = new ObservableCollection<ConquerTaskModel>();
+
+        public ConquerTaskModel SelectedTask { get; set; }
 
         public System.Drawing.Point MousePosition
         {
@@ -174,7 +177,7 @@ namespace ConquerButler.Gui
             scheduler = new ConquerScheduler();
             scheduler.Processes.CollectionChanged += Processes_CollectionChanged;
             scheduler.Start();
-            
+
             updateScreenshot.Tick += (s, o) =>
             {
                 foreach (ConquerProcessModel process in Model.Processes)
@@ -220,18 +223,7 @@ namespace ConquerButler.Gui
         {
             foreach (ConquerProcessModel process in Model.Processes)
             {
-                if (process.Tasks.Count == 0)
-                {
-                    var task2 = new MiningTask(process.ConquerProcess);
-                    task2.Start();
-
-                    var task3 = new HealthWatcherTask(process.ConquerProcess);
-                    task3.Start();
-                }
-                else
-                {
-                    process.ConquerProcess.Resume();
-                }
+                process.ConquerProcess.Resume();
             }
         }
 
@@ -243,7 +235,7 @@ namespace ConquerButler.Gui
             }
         }
 
-        private void GrabArea_OnClick(object sender, RoutedEventArgs e)
+        private void ScreenshotSelect_OnClick(object sender, RoutedEventArgs e)
         {
             if (Model.SelectedProcess == null)
             {
@@ -252,9 +244,11 @@ namespace ConquerButler.Gui
 
             Model.SelectedProcess.Refresh();
 
-            GrabWindow grabWindow = new GrabWindow();
-            grabWindow.Model.ScreenshotCopy = Model.SelectedProcess.Screenshot.Clone() as Bitmap;
-            grabWindow.Show();
+            ScreenshotSelectWindow window = new ScreenshotSelectWindow();
+            ShowAt((sender as Button), window);
+
+            window.Model.ScreenshotCopy = Model.SelectedProcess.Screenshot.Clone() as Bitmap;
+            window.Show();
         }
 
         private void processList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -262,6 +256,39 @@ namespace ConquerButler.Gui
             if (Model.SelectedProcess != null)
             {
                 Helpers.SetForegroundWindow(Model.SelectedProcess.ConquerProcess.InternalProcess);
+            }
+        }
+
+        private void ShowAt(Control control, Window window)
+        {
+            System.Windows.Point mousePositionInApp = Mouse.GetPosition(control);
+            System.Windows.Point mousePositionInScreenCoordinates = control.PointToScreen(mousePositionInApp);
+
+            window.Left = mousePositionInScreenCoordinates.X;
+            window.Top = mousePositionInScreenCoordinates.Y;
+        }
+
+        private void AddTask_Click(object sender, RoutedEventArgs e)
+        {
+            Button addTaskButton = (sender as Button);
+
+            ConquerProcessModel process = addTaskButton.DataContext as ConquerProcessModel;
+
+            TaskEditWindow window = new TaskEditWindow();
+            ShowAt(addTaskButton, window);
+
+            window.Model.Process = process;
+
+            window.Show();
+        }
+
+        private void RemoveTask_Click(object sender, RoutedEventArgs e)
+        {
+            ConquerProcessModel process = (sender as Button).DataContext as ConquerProcessModel;
+
+            if (process.SelectedTask != null)
+            {
+                process.ConquerProcess.RemoveTask(process.SelectedTask.ConquerTask);
             }
         }
     }

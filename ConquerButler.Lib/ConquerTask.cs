@@ -47,7 +47,7 @@ namespace ConquerButler
         public double Interval { get; set; } = 10;
         public long StartTick { get; set; }
         public double NextRun { get; set; }
-        public bool Enabled { get; set; } = true;
+        public bool Enabled { get; set; } = false;
         public int Priority { get; protected set; } = DEFAULT_PRIORITY;
         public bool IsRunning { get; protected set; }
         public bool IsPaused { get; protected set; }
@@ -66,7 +66,7 @@ namespace ConquerButler
             Process = process;
         }
 
-        public void Start()
+        public void Add()
         {
             Process.AddTask(this);
         }
@@ -132,7 +132,7 @@ namespace ConquerButler
 
             Enabled = false;
 
-            CancellationToken.Cancel();
+            CancellationToken?.Cancel();
         }
 
         protected Bitmap LoadImage(string fileName)

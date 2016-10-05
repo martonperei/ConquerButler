@@ -104,7 +104,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="GrabWindow.xaml">
+    <Compile Include="TaskEditWindow.xaml.cs">
+      <DependentUpon>TaskEditWindow.xaml</DependentUpon>
+    </Compile>
+    <Page Include="ScreenshotSelectWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -117,13 +120,17 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="GlobalHotkey.cs" />
-    <Compile Include="GrabWindow.xaml.cs">
-      <DependentUpon>GrabWindow.xaml</DependentUpon>
+    <Compile Include="ScreenshotSelectWindow.xaml.cs">
+      <DependentUpon>ScreenshotSelectWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="TaskEditWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">

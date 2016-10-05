@@ -5,7 +5,7 @@ using AForge.Imaging;
 
 namespace ConquerButler.Tasks
 {
-    public class MineTask : ConquerTask
+    public class MiningTask : ConquerTask
     {
         private readonly Bitmap copperoreTemplate;
         private readonly Bitmap ironoreTemplate;
@@ -16,13 +16,13 @@ namespace ConquerButler.Tasks
 
         public override string DisplayInfo { get { return $"{TaskType} Ores: {OreCount} | Running: {IsRunning} Next run: {NextRun} ms"; } }
 
-        public MineTask(ConquerInputScheduler scheduler, ConquerProcess process)
-            : base("Mine", scheduler, process)
+        public MiningTask(ConquerInputScheduler scheduler, ConquerProcess process)
+            : base("Mining", scheduler, process)
         {
             copperoreTemplate = LoadImage("images/copperore.png");
             ironoreTemplate = LoadImage("images/ironore.png");
 
-            Interval = 10000;
+            Interval = 60000;
         }
 
         public override async Task DoTick()

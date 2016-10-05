@@ -12,7 +12,7 @@ namespace ConquerButler.Tasks
         Normal
     }
 
-    public class HealthTask : ConquerTask
+    public class HealthWatcherTask : ConquerTask
     {
         private readonly Bitmap hpTemplate;
 
@@ -20,8 +20,8 @@ namespace ConquerButler.Tasks
 
         public override string DisplayInfo { get { return $"{TaskType} State: {healthState} | Running: {IsRunning} Next run: {NextRun} ms"; } }
 
-        public HealthTask(ConquerInputScheduler scheduler, ConquerProcess process)
-            : base("Health", scheduler, process)
+        public HealthWatcherTask(ConquerInputScheduler scheduler, ConquerProcess process)
+            : base("HealthWatcher", scheduler, process)
         {
             hpTemplate = LoadImage("images/lowhp.png");
 

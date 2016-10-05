@@ -5,14 +5,14 @@ using System.Threading.Tasks;
 
 namespace ConquerButler.Tasks
 {
-    public class HuntTask : ConquerTask
+    public class HuntingTask : ConquerTask
     {
         private readonly Bitmap xpFlyTemplate;
         private readonly Bitmap descendTemplate;
         private readonly Bitmap dropTemplate;
 
-        public HuntTask(ConquerInputScheduler scheduler, ConquerProcess process)
-            : base("Hunt", scheduler, process)
+        public HuntingTask(ConquerInputScheduler scheduler, ConquerProcess process)
+            : base("Hunting", scheduler, process)
         {
             Interval = 1;
 

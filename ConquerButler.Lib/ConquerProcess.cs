@@ -18,7 +18,7 @@ namespace ConquerButler
 
         public bool Invalid { get; protected set; }
         public Process InternalProcess { get; set; }
- 
+
         public Point MousePosition { get; set; }
         public ObservableCollection<ConquerTask> Tasks { get; }
 

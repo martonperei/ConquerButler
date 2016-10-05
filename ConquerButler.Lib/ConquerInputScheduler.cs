@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Canary.Core;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using log4net;
@@ -62,8 +61,8 @@ namespace ConquerButler
 
         public bool IsRunning { get; protected set; }
         public long CurrentTick { get; protected set; }
+        private Task TickTask;
         private Task ActionTask;
-        private CancellationTokenSource ActionTaskCancellation;
 
         private Random Random;
 
@@ -73,7 +72,7 @@ namespace ConquerButler
             EndedProcesses = new ConcurrentQueue<ConquerProcess>();
             StartedProcesses = new ConcurrentQueue<ConquerProcess>();
             Tasks = new ObservableCollection<ConquerTask>();
-            ActionFocusQueue = new PriorityQueue<ConquerActionFocus>(new ActionFocusComparer());
+            ActionFocusQueue = new ConcurrentPriorityQueue<ConquerActionFocus>(new ActionFocusComparer());
             Random = new Random();
 
             CurrentTick = 0;
@@ -85,24 +84,24 @@ namespace ConquerButler
 
         public void Start()
         {
+            IsRunning = true;
+
             ProcessWatcher.Start();
 
-            ActionTaskCancellation = new CancellationTokenSource();
-            ActionTask = Task.Factory.StartNew(DoActions, ActionTaskCancellation.Token);
+            TickTask = Task.Factory.StartNew(DoTick);
+            ActionTask = Task.Factory.StartNew(DoActions);
         }
 
         public void Stop()
         {
-            ProcessWatcher.Stop();
+            IsRunning = false;
 
-            ActionTaskCancellation.Cancel();
+            ProcessWatcher.Stop();
         }
 
-        private void DoActions()
+        private void DoTick()
         {
-            IsRunning = true;
-
-            while (!ActionTaskCancellation.IsCancellationRequested)
+            while (IsRunning)
             {
                 while (EndedProcesses.Count > 0)
                 {
@@ -138,7 +137,15 @@ namespace ConquerButler
                     task.Tick(1);
                 }
 
-                while (ActionFocusQueue.Count > 0)
+                Thread.Sleep(1);
+            }
+        }
+
+        private void DoActions()
+        {
+            while (IsRunning)
+            {
+                while (ActionFocusQueue.Count > 0 && IsRunning)
                 {
                     ConquerActionFocus actionFocus = ActionFocusQueue.Take();
 
@@ -155,9 +162,7 @@ namespace ConquerButler
                             actionFocus.TaskCompletion.SetResult(true);
 
                         }
-                        else if (Helpers.IsForegroundWindow(actionFocus.Task.Process.InternalProcess) &&
-                          Helpers.IsCursorInsideWindow(Helpers.GetCursorPosition(actionFocus.Task.Process.InternalProcess),
-                          actionFocus.Task.Process.InternalProcess))
+                        else if (Helpers.IsInFocus(actionFocus.Task.Process.InternalProcess))
                         {
                             actionFocus.Action();
 
@@ -172,14 +177,11 @@ namespace ConquerButler
                     else
                     {
                         actionFocus.TaskCompletion.SetCanceled();
-                        ActionFocusQueue.Remove(actionFocus);
                     }
                 }
 
                 Thread.Sleep(1);
             }
-
-            IsRunning = false;
         }
 
         public ConquerActionFocus RequestInputFocus(ConquerTask task, Action action, int priority, bool bringToForeground)

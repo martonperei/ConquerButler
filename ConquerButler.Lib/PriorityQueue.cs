@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Canary.Core
+namespace ConquerButler
 {
     /// <summary>
     /// Heap-based resizable max-priority queue.
@@ -85,7 +85,7 @@ namespace Canary.Core
         /// </summary>
         /// <returns>Max element in the collection</returns>
         /// <exception cref="InvalidOperationException">Throws <see cref="InvalidOperationException"/> when queue is empty.</exception>
-        public T Take()
+        public virtual T Take()
         {
             if (Count == 0) throw EmptyCollectionException;
 

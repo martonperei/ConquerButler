@@ -221,7 +221,7 @@ namespace ConquerButler.Gui
             {
                 if (process.Tasks.Count == 0)
                 {
-                    var task2 = new MineTask(scheduler, process.ConquerProcess);
+                    var task2 = new MiningTask(scheduler, process.ConquerProcess);
                     scheduler.Add(task2);
                 }
                 else

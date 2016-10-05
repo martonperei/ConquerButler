@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Threading.Tasks;
-using WindowsInput;
 using AForge.Imaging;
 using PropertyChanged;
 using System;
@@ -78,13 +76,14 @@ namespace ConquerButler
                 {
                     CancellationToken = new CancellationTokenSource();
 
-                    CurrentTask = Task.Run(() => {
+                    CurrentTask = Task.Run(async () =>
+                    {
                         IsRunning = true;
 
                         StartTick = Scheduler.CurrentTick;
                         NextRun = -1;
 
-                        DoTick();
+                        await DoTick();
 
                         NextRun = Interval;
 

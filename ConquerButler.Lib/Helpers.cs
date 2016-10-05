@@ -76,6 +76,11 @@ namespace ConquerButler
             p.Y = p.Y * 65535 / screenBounds.Height;
         }
 
+        public static bool IsInFocus(Process process)
+        {
+            return IsForegroundWindow(process) && IsCursorInsideWindow(GetCursorPosition(process), process);
+        }
+
         public static bool IsForegroundWindow(Process process)
         {
             return NativeMethods.GetForegroundWindow() == process.MainWindowHandle;

@@ -55,6 +55,9 @@ namespace ConquerButler
         protected ConcurrentQueue<ConquerProcess> StartedProcesses { get; }
 
         public ObservableCollection<ConquerTask> Tasks { get; set; }
+        protected ConcurrentQueue<ConquerTask> AddedTasks { get; }
+        protected ConcurrentQueue<ConquerTask> RemovedTasks { get; }
+
         private PriorityQueue<ConquerActionFocus> ActionFocusQueue;
 
         private ProcessWatcher ProcessWatcher;
@@ -71,7 +74,11 @@ namespace ConquerButler
             Processes = new ObservableCollection<ConquerProcess>();
             EndedProcesses = new ConcurrentQueue<ConquerProcess>();
             StartedProcesses = new ConcurrentQueue<ConquerProcess>();
+
             Tasks = new ObservableCollection<ConquerTask>();
+            AddedTasks = new ConcurrentQueue<ConquerTask>();
+            RemovedTasks = new ConcurrentQueue<ConquerTask>();
+
             ActionFocusQueue = new ConcurrentPriorityQueue<ConquerActionFocus>(new ActionFocusComparer());
             Random = new Random();
 
@@ -99,43 +106,77 @@ namespace ConquerButler
             ProcessWatcher.Stop();
         }
 
+        private void DoProcesses()
+        {
+            while (EndedProcesses.Count > 0)
+            {
+                ConquerProcess process;
+
+                EndedProcesses.TryDequeue(out process);
+
+                if (process != null)
+                {
+                    Processes.Remove(process);
+                }
+            }
+
+            while (StartedProcesses.Count > 0)
+            {
+                ConquerProcess process;
+
+                StartedProcesses.TryDequeue(out process);
+
+                if (process != null)
+                {
+                    Processes.Add(process);
+                }
+            }
+
+            foreach (ConquerProcess process in Processes)
+            {
+                process.Refresh();
+            }
+        }
+
+        private void DoTasks()
+        {
+            while (RemovedTasks.Count > 0)
+            {
+                ConquerTask task;
+
+                RemovedTasks.TryDequeue(out task);
+
+                if (task != null)
+                {
+                    Tasks.Remove(task);
+                }
+            }
+
+            while (AddedTasks.Count > 0)
+            {
+                ConquerTask task;
+
+                AddedTasks.TryDequeue(out task);
+
+                if (task != null)
+                {
+                    Tasks.Add(task);
+                }
+            }
+
+            foreach (ConquerTask task in Tasks)
+            {
+                task.Tick(1);
+            }
+        }
+
         private void DoTick()
         {
             while (IsRunning)
             {
-                while (EndedProcesses.Count > 0)
-                {
-                    ConquerProcess process;
+                DoProcesses();
 
-                    EndedProcesses.TryDequeue(out process);
-
-                    if (process != null)
-                    {
-                        Processes.Remove(process);
-                    }
-                }
-
-                while (StartedProcesses.Count > 0)
-                {
-                    ConquerProcess process;
-
-                    StartedProcesses.TryDequeue(out process);
-
-                    if (process != null)
-                    {
-                        Processes.Add(process);
-                    }
-                }
-
-                foreach (ConquerProcess process in Processes)
-                {
-                    process.Refresh();
-                }
-
-                foreach (ConquerTask task in Tasks)
-                {
-                    task.Tick(1);
-                }
+                DoTasks();
 
                 Thread.Sleep(1);
             }
@@ -201,17 +242,22 @@ namespace ConquerButler
 
         public void Add(ConquerTask task)
         {
-            Tasks.Add(task);
+            AddedTasks.Enqueue(task);
         }
 
         public void Remove(ConquerTask task)
         {
-            Tasks.Remove(task);
+            RemovedTasks.Enqueue(task);
         }
 
         public void CancelRunning()
         {
-            ActionFocusQueue.Clear();
+            while (ActionFocusQueue.Count > 0)
+            {
+                ConquerActionFocus actionFocus = ActionFocusQueue.Take();
+
+                actionFocus.TaskCompletion.SetCanceled();
+            }
 
             foreach (ConquerProcess process in Processes)
             {

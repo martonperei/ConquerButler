@@ -83,11 +83,16 @@ namespace ConquerButler
                         StartTick = Scheduler.CurrentTick;
                         NextRun = -1;
 
-                        await DoTick();
+                        try
+                        {
+                            await DoTick();
+                        }
+                        finally
+                        {
+                            NextRun = Interval;
 
-                        NextRun = Interval;
-
-                        IsRunning = false;
+                            IsRunning = false;
+                        }
                     }, CancellationToken.Token);
 
                     return CurrentTask;
@@ -115,6 +120,8 @@ namespace ConquerButler
 
         public void Cancel()
         {
+            IsRunning = false;
+
             Enabled = false;
 
             CancellationToken.Cancel();

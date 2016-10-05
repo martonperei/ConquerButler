@@ -9,12 +9,13 @@ namespace ConquerButler.Tasks
     {
         Unknown,
         Low,
-        Normal
+        Full
     }
 
     public class HealthWatcherTask : ConquerTask
     {
-        private readonly Bitmap hpTemplate;
+        private readonly Bitmap lowhpTemplate;
+        private readonly Bitmap fullhpTemplate;
 
         private HealthState healthState;
 
@@ -23,7 +24,8 @@ namespace ConquerButler.Tasks
         public HealthWatcherTask(ConquerInputScheduler scheduler, ConquerProcess process)
             : base("HealthWatcher", scheduler, process)
         {
-            hpTemplate = LoadImage("images/lowhp.png");
+            lowhpTemplate = LoadImage("images/lowhp.png");
+            fullhpTemplate = LoadImage("images/fullhp.png");
 
             healthState = HealthState.Unknown;
 
@@ -32,22 +34,31 @@ namespace ConquerButler.Tasks
 
         public override Task DoTick()
         {
-            List<TemplateMatch> matches = Process.FindMatches(0.95f, ConquerControls.HEALTH, hpTemplate);
+            List<TemplateMatch> isFullHp = Process.FindMatches(0.95f, ConquerControls.HEALTH, fullhpTemplate);
 
-            if (matches.Count > 0)
+            if (isFullHp.Count > 0)
             {
-                if (healthState == HealthState.Normal)
-                {
-                    Process.InternalProcess.CloseMainWindow();
-                }
-                else
-                {
-                    healthState = HealthState.Low;
-                }
+                healthState = HealthState.Full;
             }
             else
             {
-                healthState = HealthState.Normal;
+                List<TemplateMatch> isLowHp = Process.FindMatches(0.95f, ConquerControls.HEALTH, lowhpTemplate);
+
+                if (isLowHp.Count > 0)
+                {
+                    if (healthState == HealthState.Full)
+                    {
+                        Process.InternalProcess.CloseMainWindow();
+                    }
+                    else
+                    {
+                        healthState = HealthState.Low;
+                    }
+                }
+                else
+                {
+                    healthState = HealthState.Unknown;
+                }
             }
 
             return Task.FromResult(true);
@@ -57,7 +68,8 @@ namespace ConquerButler.Tasks
         {
             base.Dispose(disposing);
 
-            hpTemplate.Dispose();
+            lowhpTemplate.Dispose();
+            fullhpTemplate.Dispose();
         }
     }
 }

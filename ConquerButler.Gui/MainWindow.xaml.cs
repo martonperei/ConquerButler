@@ -223,6 +223,9 @@ namespace ConquerButler.Gui
                 {
                     var task2 = new MiningTask(scheduler, process.ConquerProcess);
                     scheduler.Add(task2);
+
+                    var task3 = new HealthWatcherTask(scheduler, process.ConquerProcess);
+                    scheduler.Add(task3);
                 }
                 else
                 {

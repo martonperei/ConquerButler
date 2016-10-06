@@ -25,7 +25,7 @@ namespace ConquerButler.Tasks
             _copperoreTemplate = LoadImage("images/copperore.png");
             _ironoreTemplate = LoadImage("images/ironore.png");
 
-            Interval = 60;
+            Interval = 240;
         }
 
         public override async Task DoTick()

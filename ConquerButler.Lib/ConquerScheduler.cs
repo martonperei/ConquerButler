@@ -18,7 +18,7 @@ namespace ConquerButler
 
             if (c == 0)
             {
-                c = x.Task.StartTick.CompareTo(y.Task.StartTick);
+                c = y.Task.StartTick.CompareTo(x.Task.StartTick);
 
                 if (c == 0)
                 {

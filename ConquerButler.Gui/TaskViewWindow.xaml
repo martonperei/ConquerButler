@@ -27,7 +27,7 @@
         <ListBox x:Name="TaskTypeList"
                  Grid.Column="1"
                  ScrollViewer.CanContentScroll="True"
-                 ItemsSource="{Binding Path=Model.TaskTypes}"
+                 ItemsSource="{Binding Model.TaskTypes}"
                  SelectedItem="{Binding Model.SelectedTaskType, Mode=TwoWay}"
                  SelectionChanged="TaskTypeList_SelectionChanged">
             <ListBox.ItemTemplate>

@@ -19,8 +19,8 @@ namespace ConquerButler.Tasks
 
         public static string TASK_TYPE_NAME = "HealthWatcher";
 
-        private readonly Bitmap lowhpTemplate;
-        private readonly Bitmap fullhpTemplate;
+        private readonly Bitmap _lowhpTemplate;
+        private readonly Bitmap _fullhpTemplate;
 
         public HealthState healthState { get; protected set; }
 
@@ -29,15 +29,15 @@ namespace ConquerButler.Tasks
         public HealthWatcherTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
-            lowhpTemplate = LoadImage("images/lowhp.png");
-            fullhpTemplate = LoadImage("images/fullhp.png");
+            _lowhpTemplate = LoadImage("images/lowhp.png");
+            _fullhpTemplate = LoadImage("images/fullhp.png");
 
             healthState = HealthState.Unknown;
         }
 
         public override Task DoTick()
         {
-            List<TemplateMatch> isFullHp = Process.FindMatches(0.95f, ConquerControls.HEALTH, fullhpTemplate);
+            List<TemplateMatch> isFullHp = FindMatches(0.95f, ConquerControls.HEALTH, _fullhpTemplate);
 
             if (isFullHp.Count > 0)
             {
@@ -45,7 +45,7 @@ namespace ConquerButler.Tasks
             }
             else
             {
-                List<TemplateMatch> isLowHp = Process.FindMatches(0.95f, ConquerControls.HEALTH, lowhpTemplate);
+                List<TemplateMatch> isLowHp = FindMatches(0.95f, ConquerControls.HEALTH, _lowhpTemplate);
 
                 if (isLowHp.Count > 0)
                 {
@@ -71,8 +71,8 @@ namespace ConquerButler.Tasks
         {
             base.Dispose(disposing);
 
-            lowhpTemplate.Dispose();
-            fullhpTemplate.Dispose();
+            _lowhpTemplate.Dispose();
+            _fullhpTemplate.Dispose();
         }
     }
 }

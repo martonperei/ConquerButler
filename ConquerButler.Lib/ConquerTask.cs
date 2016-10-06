@@ -4,6 +4,7 @@ using PropertyChanged;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Threading;
@@ -17,13 +18,13 @@ namespace ConquerButler
 
         public int Compare(TemplateMatch x, TemplateMatch y)
         {
-            int diff = Math.Abs(y.Rectangle.Y - x.Rectangle.Y);
+            int diff = Math.Abs(x.Rectangle.Y - y.Rectangle.Y);
 
-            int c = diff < EPSILON ? 0 : y.Rectangle.Y.CompareTo(x.Rectangle.Y);
+            int c = diff < EPSILON ? 0 : x.Rectangle.Y.CompareTo(y.Rectangle.Y);
 
             if (c == 0)
             {
-                return y.Rectangle.X.CompareTo(x.Rectangle.X);
+                return x.Rectangle.X.CompareTo(y.Rectangle.X);
             }
             else
             {
@@ -36,6 +37,7 @@ namespace ConquerButler
     public abstract class ConquerTask : IDisposable, INotifyPropertyChanged
     {
         private static ILog log = LogManager.GetLogger(typeof(ConquerTask));
+        private static readonly TemplateMatchComparer _templateComparer = new TemplateMatchComparer();
 
         public const int DEFAULT_PRIORITY = 100;
 
@@ -47,11 +49,14 @@ namespace ConquerButler
         public double Interval { get; set; } = 10;
         public long StartTick { get; set; }
         public double NextRun { get; set; }
-        public bool Enabled { get; set; } = false;
+
         public int Priority { get; protected set; } = DEFAULT_PRIORITY;
-        public bool IsRunning { get; protected set; }
-        public bool IsPaused { get; protected set; }
+
+        public bool Enabled { get; set; } = true;
+        public bool IsRunning { get; protected set; } = false;
+        public bool IsPaused { get; protected set; } = true;
         public bool NeedsUserFocus { get; protected set; } = false;
+
         public string TaskType { get; protected set; }
 
         protected CancellationTokenSource CancellationToken;
@@ -80,11 +85,11 @@ namespace ConquerButler
 
         public void Tick(double dt)
         {
-            if (Enabled && !IsRunning)
+            if (Enabled && !IsRunning && !IsPaused)
             {
                 if (NextRun <= 0)
                 {
-                    log.Info($"{TaskType} Running");
+                    log.Info($"Process {Process.Id} - task {TaskType} running");
 
                     IsRunning = true;
 
@@ -98,6 +103,12 @@ namespace ConquerButler
                         try
                         {
                             await DoTick();
+                        }
+                        catch (Exception e)
+                        {
+                            log.Error($"Process {Process.Id} - task {TaskType} exception", e);
+
+                            throw e;
                         }
                         finally
                         {
@@ -118,29 +129,23 @@ namespace ConquerButler
 
         public void Pause()
         {
-            Enabled = false;
+            IsPaused = true;
         }
 
         public void Resume()
         {
-            Enabled = true;
+            IsPaused = false;
         }
 
         public void Cancel()
         {
+            IsPaused = false;
+
             IsRunning = false;
 
             Enabled = false;
 
             CancellationToken?.Cancel();
-        }
-
-        protected Bitmap LoadImage(string fileName)
-        {
-            using (var bmp = new Bitmap(fileName))
-            {
-                return bmp.ConvertToFormat(PixelFormat.Format24bppRgb);
-            }
         }
 
         public async Task<bool> RequestInputFocus(Action action, int priority)
@@ -152,6 +157,53 @@ namespace ConquerButler
             await focusAction.TaskCompletion.Task;
 
             return focusAction.TaskCompletion.Task.Result;
+        }
+
+        protected Bitmap LoadImage(string fileName)
+        {
+            using (var bmp = new Bitmap(fileName))
+            {
+                Bitmap result = bmp.ConvertToFormat(PixelFormat.Format24bppRgb);
+                result.Tag = fileName;
+                return result;
+            }
+        }
+
+        public List<TemplateMatch> FindMatches(float similiarity, Rectangle sourceRect, params Bitmap[] templates)
+        {
+            using (Bitmap source = Process.Screenshot())
+            {
+                if (source.Width < source.Width || source.Height < sourceRect.Height)
+                {
+                    return new List<TemplateMatch>();
+                }
+
+                ExhaustiveTemplateMatching tm = new ExhaustiveTemplateMatching(similiarity);
+
+                List<TemplateMatch> matches = new List<TemplateMatch>();
+
+                Stopwatch watch = new Stopwatch();
+
+                foreach (Bitmap template in templates)
+                {
+                    watch.Restart();
+
+                    TemplateMatch[] match = tm.ProcessImage(source, template, sourceRect);
+
+                    log.Info($"Process {Process.Id} - task {TaskType} - {template.Tag} detection took {watch.ElapsedMilliseconds}ms");
+
+                    matches.AddRange(match);
+                }
+
+                matches.Sort(_templateComparer);
+
+                return matches;
+            }
+        }
+
+        public Point MatchToPoint(TemplateMatch m)
+        {
+            return new Point(m.Rectangle.X + m.Rectangle.Width / 2, m.Rectangle.Y + m.Rectangle.Height / 2);
         }
 
         protected bool Equals(ConquerTask other)

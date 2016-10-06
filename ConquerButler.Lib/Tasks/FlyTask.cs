@@ -12,8 +12,8 @@ namespace ConquerButler.Tasks
 
         public static string TASK_TYPE_NAME = "Fly";
 
-        private readonly Bitmap xpFlyTemplate;
-        private readonly Bitmap descendTemplate;
+        private readonly Bitmap _xpFlyTemplate;
+        private readonly Bitmap _descendTemplate;
 
         public FlyTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
@@ -22,28 +22,30 @@ namespace ConquerButler.Tasks
 
             NeedsUserFocus = true;
 
-            xpFlyTemplate = LoadImage("images/xpfly.png");
-            descendTemplate = LoadImage("images/descend.png");
+            _xpFlyTemplate = LoadImage("images/xpfly.png");
+            _descendTemplate = LoadImage("images/descend.png");
         }
 
         public bool IsFlying()
         {
-            return Process.FindMatches(0.95f, ConquerControls.XP_SKILLS, descendTemplate).Count > 0;
+            return FindMatches(0.95f, ConquerControls.XP_SKILLS, _descendTemplate).Count > 0;
         }
 
         public async override Task DoTick()
         {
-            List<TemplateMatch> isXpFly = Process.FindMatches(0.95f, ConquerControls.XP_SKILLS, xpFlyTemplate);
+            List<TemplateMatch> isXpFly = FindMatches(0.95f, ConquerControls.XP_SKILLS, _xpFlyTemplate);
 
             if (isXpFly.Count > 0)
             {
                 await RequestInputFocus(() =>
                 {
+                    Scheduler.Wait(1000);
+
                     Point p = Process.GetCursorPosition();
 
-                    Process.LeftClickOnPoint(Process.MatchToPoint(isXpFly[0]));
+                    Process.LeftClickOnPoint(MatchToPoint(isXpFly[0]));
 
-                    Scheduler.Wait(250);
+                    Scheduler.Wait(500);
 
                     Helpers.ClientToVirtualScreen(Process.InternalProcess, ref p);
 
@@ -56,8 +58,8 @@ namespace ConquerButler.Tasks
         {
             base.Dispose(disposing);
 
-            xpFlyTemplate.Dispose();
-            descendTemplate.Dispose();
+            _xpFlyTemplate.Dispose();
+            _descendTemplate.Dispose();
         }
     }
 }

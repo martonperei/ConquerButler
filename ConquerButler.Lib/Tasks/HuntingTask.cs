@@ -1,5 +1,4 @@
 ﻿using log4net;
-using System.Drawing;
 using System.Threading.Tasks;
 
 namespace ConquerButler.Tasks
@@ -10,14 +9,10 @@ namespace ConquerButler.Tasks
 
         public static string TASK_TYPE_NAME = "Hunting";
 
-        private readonly Bitmap xpFlyTemplate;
-        private readonly Bitmap descendTemplate;
-        private readonly Bitmap dropTemplate;
-
         public HuntingTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
-            Interval = 1;
+            Interval = 0;
 
             NeedsUserFocus = true;
         }

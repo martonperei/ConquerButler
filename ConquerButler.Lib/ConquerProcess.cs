@@ -1,14 +1,13 @@
-﻿using AForge.Imaging;
-using log4net;
+﻿using log4net;
 using PropertyChanged;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using WindowsInput;
 
 namespace ConquerButler
@@ -18,6 +17,7 @@ namespace ConquerButler
     {
         private static ILog log = LogManager.GetLogger(typeof(ConquerProcess));
 
+        public int Id { get; protected set; }
         public ConquerScheduler Scheduler { get; protected set; }
         public Process InternalProcess { get; protected set; }
         public bool Invalid { get; protected set; }
@@ -30,19 +30,18 @@ namespace ConquerButler
 
         private readonly ConcurrentQueue<ConquerTask> _addedTasks;
         private readonly ConcurrentQueue<ConquerTask> _removedTasks;
-        private readonly TemplateMatchComparer _templateComparer;
+
         private readonly Random _random;
 
         public ConquerProcess(Process process, ConquerScheduler scheduler)
         {
+            Id = process.Id;
             InternalProcess = process;
             Scheduler = scheduler;
             Tasks = new ObservableCollection<ConquerTask>();
             Simulator = new InputSimulator();
 
             _random = new Random();
-
-            _templateComparer = new TemplateMatchComparer();
 
             _addedTasks = new ConcurrentQueue<ConquerTask>();
             _removedTasks = new ConcurrentQueue<ConquerTask>();
@@ -65,7 +64,8 @@ namespace ConquerButler
         {
             foreach (ConquerTask task in Tasks)
             {
-                if (typeof(T) == task.GetType()) {
+                if (typeof(T) == task.GetType())
+                {
                     task.Pause();
                 }
             }
@@ -148,6 +148,12 @@ namespace ConquerButler
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public Bitmap Screenshot()
+        {
+            return Helpers.PrintWindow(InternalProcess);
+        }
+
         public Point GetCursorPosition()
         {
             return Helpers.GetCursorPosition(InternalProcess);
@@ -157,43 +163,6 @@ namespace ConquerButler
         {
             return Helpers.IsForegroundWindow(InternalProcess) &&
                 Helpers.IsCursorInsideWindow(Helpers.GetCursorPosition(InternalProcess), InternalProcess);
-        }
-
-        public List<TemplateMatch> FindMatches(float similiarity, Rectangle sourceRect, params Bitmap[] templates)
-        {
-            using (Bitmap source = Helpers.PrintWindow(InternalProcess))
-            {
-                if (source.Width < source.Width || source.Height < sourceRect.Height)
-                {
-                    return new List<TemplateMatch>();
-                }
-
-                ExhaustiveTemplateMatching tm = new ExhaustiveTemplateMatching(similiarity);
-
-                List<TemplateMatch> matches = new List<TemplateMatch>();
-
-                Stopwatch watch = new Stopwatch();
-                watch.Start();
-                foreach (Bitmap template in templates)
-                {
-                    TemplateMatch[] match = tm.ProcessImage(source, template, sourceRect);
-
-                    matches.AddRange(match);
-                }
-
-                log.Info($"Detection took {watch.ElapsedMilliseconds}ms");
-
-                matches.Sort(_templateComparer);
-
-                log.Info($"+Sorting took {watch.ElapsedMilliseconds}ms");
-
-                return matches;
-            }
-        }
-
-        public Point MatchToPoint(TemplateMatch m)
-        {
-            return new Point(m.Rectangle.X + m.Rectangle.Width / 2, m.Rectangle.Y + m.Rectangle.Height / 2);
         }
 
         public void LeftClickOnPoint(Point p, int variation = 5)

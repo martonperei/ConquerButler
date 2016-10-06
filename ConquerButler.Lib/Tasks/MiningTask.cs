@@ -12,8 +12,8 @@ namespace ConquerButler.Tasks
 
         public static string TASK_TYPE_NAME = "Mining";
 
-        private readonly Bitmap copperoreTemplate;
-        private readonly Bitmap ironoreTemplate;
+        private readonly Bitmap _copperoreTemplate;
+        private readonly Bitmap _ironoreTemplate;
 
         public int OreCount { get; protected set; }
 
@@ -22,40 +22,44 @@ namespace ConquerButler.Tasks
         public MiningTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
-            copperoreTemplate = LoadImage("images/copperore.png");
-            ironoreTemplate = LoadImage("images/ironore.png");
+            _copperoreTemplate = LoadImage("images/copperore.png");
+            _ironoreTemplate = LoadImage("images/ironore.png");
 
             Interval = 60;
         }
 
         public override async Task DoTick()
         {
-            List<TemplateMatch> matches = Process.FindMatches(0.95f, ConquerControls.INVENTORY, ironoreTemplate, copperoreTemplate);
+            List<TemplateMatch> matches = FindMatches(0.95f, ConquerControls.INVENTORY, _ironoreTemplate, _copperoreTemplate);
 
             OreCount = matches.Count;
 
-            for (int i = 0; i < matches.Count && i < 19; i++)
+            List<Task> taskList = new List<Task>();
+
+            for (int i = matches.Count - 1; i >= 0 && i >= matches.Count - 19; i--)
             {
                 TemplateMatch m = matches[i];
 
-                await RequestInputFocus(() =>
+                taskList.Add(RequestInputFocus(() =>
                 {
-                    Process.LeftClickOnPoint(Process.MatchToPoint(m));
+                    Process.LeftClickOnPoint(MatchToPoint(m));
                     Scheduler.Wait(250);
                     Process.LeftClickOnPoint(new Point(700, 100), 40);
                     Scheduler.Wait(250);
-                }, i);
 
-                OreCount--;
+                    OreCount--;
+                }, i));
             }
+
+            await Task.WhenAll(taskList);
         }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
 
-            copperoreTemplate.Dispose();
-            ironoreTemplate.Dispose();
+            _copperoreTemplate.Dispose();
+            _ironoreTemplate.Dispose();
         }
     }
 }

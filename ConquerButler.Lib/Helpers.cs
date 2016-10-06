@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace ConquerButler
@@ -150,7 +149,6 @@ namespace ConquerButler
             return target;
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public static Bitmap PrintWindow(Process process)
         {
             RECT rc;

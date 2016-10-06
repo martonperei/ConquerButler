@@ -36,16 +36,16 @@
             <Button x:Name="ScreenshotSelect" Width="70" Height="25" Margin="10,0,10,10" HorizontalAlignment="Right"
                     Content="Screenshot" Click="ScreenshotSelect_OnClick"/>
             <Label Margin="0,0,0,10" Content="X"></Label>
-            <Label Margin="0,0,0,10" Width="40" Content="{Binding Path=Model.SelectedProcess.MousePosition.X}"></Label>
+            <Label Margin="0,0,0,10" Width="40" Content="{Binding Model.SelectedProcess.MousePosition.X}"></Label>
             <Label Margin="0,0,0,10" Content="Y"></Label>
-            <Label Margin="0,0,0,10" Width="40" Content="{Binding Path=Model.SelectedProcess.MousePosition.Y}" ></Label>
+            <Label Margin="0,0,0,10" Width="40" Content="{Binding Model.SelectedProcess.MousePosition.Y}" ></Label>
         </StackPanel>
 
         <ListBox x:Name="ProcessList"
                  Grid.Row="1" Grid.ColumnSpan="2"
                  ScrollViewer.CanContentScroll="True"
                  SelectionMode="Multiple"
-                 ItemsSource="{Binding Path=Model.Processes}"
+                 ItemsSource="{Binding Model.Processes}"
                  SelectedItem="{Binding Model.SelectedProcess, Mode=TwoWay}">
             <ListBox.Resources>
                 <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
@@ -61,6 +61,7 @@
                             <RowDefinition Height="30"/>
                             <RowDefinition Height="30"/>
                             <RowDefinition Height="30"/>
+                            <RowDefinition Height="30"/>
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
@@ -69,24 +70,27 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <Image Grid.RowSpan="5" Grid.Column="0" Width="160" Source="{Binding Path=Thumbnail}"></Image>
+                        <Image Grid.RowSpan="6" Grid.Column="0" Width="160" Source="{Binding Thumbnail}" VerticalAlignment="Top"></Image>
 
-                        <Label Grid.Row="0" Grid.Column="1" Content="Name" HorizontalAlignment="Left" VerticalAlignment="Center"></Label>
-                        <Image Grid.Row="0" Grid.Column="2" Width="100" Height="11" HorizontalAlignment="Left" VerticalAlignment="Center"
-                               Source="{Binding Path=Name}"></Image>
+                        <Label Grid.Row="0" Grid.Column="1" Content="Id" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"></Label>
+                        <Label Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center"
+                               Content="{Binding ConquerProcess.Id}"></Label>
+                        <Label Grid.Row="1" Grid.Column="1" Content="Name" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"></Label>
+                        <Image Grid.Row="1" Grid.Column="2" Width="100" Height="11" HorizontalAlignment="Left" VerticalAlignment="Center"
+                               Source="{Binding Name}"></Image>
 
-                        <Label Grid.Row="1" Grid.Column="1" Content="Tasks" HorizontalAlignment="Left" VerticalAlignment="Center"></Label>
+                        <Label Grid.Row="2" Grid.Column="1" Content="Tasks" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"></Label>
 
                         <ListBox x:Name="TaskList"
-                                 Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Grid.RowSpan="4"
-                                 Height="120" Width="410"
+                                 Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Grid.RowSpan="4"
+                                 Height="120" Width="390"
                                  HorizontalAlignment="Left" VerticalAlignment="Center"
                                  ScrollViewer.CanContentScroll="True"
                                  SelectionMode="Multiple"
-                                 ItemsSource="{Binding Path=Tasks}">
+                                 ItemsSource="{Binding Tasks}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <Label Content="{Binding Path=DisplayInfo}"></Label>
+                                    <Label Content="{Binding DisplayInfo}"></Label>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>

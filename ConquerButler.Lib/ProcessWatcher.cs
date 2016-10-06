@@ -13,11 +13,12 @@ namespace ConquerButler
         public event Action<Process> ProcessStarted;
         public event Action<Process> ProcessEnded;
 
-        public HashSet<int> Processes;
+        public readonly HashSet<int> Processes;
 
         public string ProcessName { get; protected set; }
-        public Task WatcherTask;
-        public CancellationTokenSource CancellationSource;
+
+        private Task _watcherTask;
+        private CancellationTokenSource _cancellationSource;
 
         public int CheckInterval { get; set; } = 10000;
 
@@ -29,20 +30,20 @@ namespace ConquerButler
 
         public void Start()
         {
-            CancellationSource = new CancellationTokenSource();
-            WatcherTask = Task.Factory.StartNew(Main, CancellationSource.Token);
+            _cancellationSource = new CancellationTokenSource();
+            _watcherTask = Task.Factory.StartNew(Main, _cancellationSource.Token);
         }
 
         public void Stop()
         {
-            CancellationSource.Cancel();
+            _cancellationSource.Cancel();
         }
 
         public void Main()
         {
             IsRunning = true;
 
-            while (!CancellationSource.IsCancellationRequested)
+            while (!_cancellationSource.IsCancellationRequested)
             {
                 foreach (Process process in Helpers.GetProcesses(ProcessName))
                 {
@@ -74,7 +75,7 @@ namespace ConquerButler
 
         public void Dispose()
         {
-            CancellationSource.Cancel();
+            _cancellationSource.Cancel();
         }
     }
 }

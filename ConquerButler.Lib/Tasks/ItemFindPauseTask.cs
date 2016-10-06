@@ -13,19 +13,19 @@ namespace ConquerButler.Tasks
 
         public static string TASK_TYPE_NAME = "ItemFind";
 
-        private readonly Bitmap dropTemplate;
+        private readonly Bitmap _dropTemplate;
 
         public ItemFindPauseTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
-            Interval = 1;
+            Interval = 10;
 
-            dropTemplate = LoadImage("images/drop.png");
+            _dropTemplate = LoadImage("images/drop.png");
         }
 
         public override Task DoTick()
         {
-            List<TemplateMatch> isDrop = Process.FindMatches(0.95f, ConquerControls.CHAT_AREA, dropTemplate);
+            List<TemplateMatch> isDrop = FindMatches(0.95f, ConquerControls.CHAT_AREA, _dropTemplate);
 
             if (isDrop.Count > 0)
             {
@@ -43,7 +43,7 @@ namespace ConquerButler.Tasks
         {
             base.Dispose(disposing);
 
-            dropTemplate.Dispose();
+            _dropTemplate.Dispose();
         }
     }
 }

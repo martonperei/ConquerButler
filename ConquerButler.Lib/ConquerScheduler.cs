@@ -22,11 +22,14 @@ namespace ConquerButler
 
                 if (c == 0)
                 {
-                    c = x.Priority.CompareTo(y.Priority);
+                    bool isXForeground = Helpers.IsForegroundWindow(x.Task.Process.InternalProcess);
+                    bool isYForeground = Helpers.IsForegroundWindow(y.Task.Process.InternalProcess);
+
+                    c = isXForeground.CompareTo(isYForeground);
 
                     if (c == 0)
                     {
-                        c = Helpers.IsForegroundWindow(x.Task.Process.InternalProcess) ? 1 : -1;
+                        c = x.Priority.CompareTo(y.Priority);
                     }
                 }
             }
@@ -179,6 +182,8 @@ namespace ConquerButler
                     {
                         if (actionFocus.BringToForeground)
                         {
+                            log.Info($"Bringing process {actionFocus.Task.Process.Id} to foreground");
+
                             Helpers.SetForegroundWindow(actionFocus.Task.Process.InternalProcess);
 
                             Wait(500);
@@ -196,7 +201,6 @@ namespace ConquerButler
                         }
                         else
                         {
-                            // requeue for future
                             _actionFocusQueue.Add(actionFocus);
                         }
                     }
@@ -242,9 +246,9 @@ namespace ConquerButler
             }
         }
 
-        public void Wait(int wait)
+        public void Wait(int wait, int variance = 50)
         {
-            Thread.Sleep(wait + _random.Next(-50, 50));
+            Thread.Sleep(wait + _random.Next(-variance, variance));
         }
 
         private void ProcessWatcher_ProcessEnded(Process process)

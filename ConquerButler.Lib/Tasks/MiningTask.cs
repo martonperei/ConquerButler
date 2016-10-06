@@ -1,12 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using AForge.Imaging;
+using log4net;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
-using AForge.Imaging;
 
 namespace ConquerButler.Tasks
 {
     public class MiningTask : ConquerTask
     {
+        private static ILog log = LogManager.GetLogger(typeof(MiningTask));
+
+        public static string TASK_TYPE_NAME = "Mining";
+
         private readonly Bitmap copperoreTemplate;
         private readonly Bitmap ironoreTemplate;
 
@@ -15,7 +20,7 @@ namespace ConquerButler.Tasks
         public override string DisplayInfo { get { return $"{TaskType} Ores: {OreCount} | Running: {IsRunning} Next run: {NextRun:F2}s"; } }
 
         public MiningTask(ConquerProcess process)
-            : base("Mining", process)
+            : base(TASK_TYPE_NAME, process)
         {
             copperoreTemplate = LoadImage("images/copperore.png");
             ironoreTemplate = LoadImage("images/ironore.png");

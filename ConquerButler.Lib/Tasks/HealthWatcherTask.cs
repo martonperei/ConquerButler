@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using AForge.Imaging;
+using log4net;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
-using AForge.Imaging;
-using log4net;
 
 namespace ConquerButler.Tasks
 {
@@ -17,6 +17,8 @@ namespace ConquerButler.Tasks
     {
         private static ILog log = LogManager.GetLogger(typeof(HealthWatcherTask));
 
+        public static string TASK_TYPE_NAME = "HealthWatcher";
+
         private readonly Bitmap lowhpTemplate;
         private readonly Bitmap fullhpTemplate;
 
@@ -25,7 +27,7 @@ namespace ConquerButler.Tasks
         public override string DisplayInfo { get { return $"{TaskType} State: {healthState} | Running: {IsRunning} Next run: {NextRun:F2}s"; } }
 
         public HealthWatcherTask(ConquerProcess process)
-            : base("HealthWatcher", process)
+            : base(TASK_TYPE_NAME, process)
         {
             lowhpTemplate = LoadImage("images/lowhp.png");
             fullhpTemplate = LoadImage("images/fullhp.png");

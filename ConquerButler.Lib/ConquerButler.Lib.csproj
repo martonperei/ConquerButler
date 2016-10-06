@@ -84,8 +84,11 @@
     <Compile Include="ConquerTask.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="ProcessWatcher.cs" />
+    <Compile Include="Tasks\CustomTask.cs" />
+    <Compile Include="Tasks\FlyTask.cs" />
     <Compile Include="Tasks\HealthWatcherTask.cs" />
     <Compile Include="Tasks\HuntingTask.cs" />
+    <Compile Include="Tasks\ItemFindPauseTask.cs" />
     <Compile Include="Tasks\MiningTask.cs" />
     <Compile Include="PriorityQueue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

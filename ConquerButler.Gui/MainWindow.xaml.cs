@@ -1,24 +1,26 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Windows;
-using System.Windows.Input;
-using ConquerButler.Tasks;
+﻿using log4net;
 using PropertyChanged;
-using System.Windows.Threading;
-using System.Drawing;
-using System.Windows.Media.Imaging;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.Linq;
 using System.ComponentModel;
-using log4net;
+using System.Drawing;
+using System.Linq;
 using System.Reactive.Linq;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 namespace ConquerButler.Gui
 {
     [ImplementPropertyChanged]
     public class ConquerTaskModel : INotifyPropertyChanged
     {
+        public bool IsSelected { get; set; }
+
         public ConquerTask ConquerTask { get; set; }
 
         public string DisplayInfo
@@ -51,11 +53,11 @@ namespace ConquerButler.Gui
     [ImplementPropertyChanged]
     public class ConquerProcessModel : INotifyPropertyChanged
     {
+        public bool IsSelected { get; set; }
+
         public ConquerProcess ConquerProcess { get; set; }
 
         public ObservableCollection<ConquerTaskModel> Tasks { get; set; } = new ObservableCollection<ConquerTaskModel>();
-
-        public ConquerTaskModel SelectedTask { get; set; }
 
         public System.Drawing.Point MousePosition
         {
@@ -150,7 +152,7 @@ namespace ConquerButler.Gui
     {
         public ObservableCollection<ConquerProcessModel> Processes { get; set; } = new ObservableCollection<ConquerProcessModel>();
 
-        public ConquerProcessModel SelectedProcess { get; set; }
+        public List<ConquerProcessModel> SelectedProcesses { get; set; }
     }
 
     public partial class MainWindow : Window
@@ -219,43 +221,13 @@ namespace ConquerButler.Gui
             });
         }
 
-        private void StartTasks_OnClick(object sender, RoutedEventArgs e)
+        private void ProcessItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            foreach (ConquerProcessModel process in Model.Processes)
+            ConquerProcessModel process = (e.Source as ListBoxItem)?.DataContext as ConquerProcessModel;
+
+            if (process != null)
             {
-                process.ConquerProcess.Resume();
-            }
-        }
-
-        private void StopTasks_OnClick(object sender, RoutedEventArgs e)
-        {
-            foreach (ConquerProcessModel process in Model.Processes)
-            {
-                process.ConquerProcess.Pause();
-            }
-        }
-
-        private void ScreenshotSelect_OnClick(object sender, RoutedEventArgs e)
-        {
-            if (Model.SelectedProcess == null)
-            {
-                return;
-            }
-
-            Model.SelectedProcess.Refresh();
-
-            ScreenshotSelectWindow window = new ScreenshotSelectWindow();
-            ShowAt((sender as Button), window);
-
-            window.Model.ScreenshotCopy = Model.SelectedProcess.Screenshot.Clone() as Bitmap;
-            window.Show();
-        }
-
-        private void processList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (Model.SelectedProcess != null)
-            {
-                Helpers.SetForegroundWindow(Model.SelectedProcess.ConquerProcess.InternalProcess);
+                Helpers.SetForegroundWindow(process.ConquerProcess.InternalProcess);
             }
         }
 
@@ -268,27 +240,81 @@ namespace ConquerButler.Gui
             window.Top = mousePositionInScreenCoordinates.Y;
         }
 
-        private void AddTask_Click(object sender, RoutedEventArgs e)
+        private void ResumeTasks_OnClick(object sender, RoutedEventArgs e)
         {
-            Button addTaskButton = (sender as Button);
+            IEnumerable<ConquerProcessModel> processes = Model.Processes.Where(p => p.IsSelected);
 
-            ConquerProcessModel process = addTaskButton.DataContext as ConquerProcessModel;
-
-            TaskEditWindow window = new TaskEditWindow();
-            ShowAt(addTaskButton, window);
-
-            window.Model.Process = process;
-
-            window.Show();
+            foreach (ConquerProcessModel process in processes)
+            {
+                process.ConquerProcess.Resume();
+            }
         }
 
-        private void RemoveTask_Click(object sender, RoutedEventArgs e)
+        private void PauseTasks_OnClick(object sender, RoutedEventArgs e)
         {
-            ConquerProcessModel process = (sender as Button).DataContext as ConquerProcessModel;
+            IEnumerable<ConquerProcessModel> processes = Model.Processes.Where(p => p.IsSelected);
 
-            if (process.SelectedTask != null)
+            foreach (ConquerProcessModel process in processes)
             {
-                process.ConquerProcess.RemoveTask(process.SelectedTask.ConquerTask);
+                process.ConquerProcess.Pause();
+            }
+        }
+
+        private void AddTasks_Click(object sender, RoutedEventArgs e)
+        {
+            List<ConquerProcessModel> processes = Model.Processes.Where(p => p.IsSelected).ToList();
+
+            if (processes.Count > 0)
+            {
+                Button addTaskButton = (sender as Button);
+
+                TaskViewWindow window = new TaskViewWindow();
+                ShowAt(addTaskButton, window);
+
+                window.Model.Processes = processes;
+
+                window.Show();
+            }
+        }
+
+        private void RemoveTasks_Click(object sender, RoutedEventArgs e)
+        {
+            List<ConquerTaskModel> tasks = Model.Processes.SelectMany(p => p.Tasks).Where(t => t.IsSelected).ToList();
+
+            if (tasks.Count > 0)
+            {
+                foreach (ConquerTaskModel task in tasks)
+                {
+                    task.ConquerTask.Remove();
+                }
+            }
+            else
+            {
+                IEnumerable<ConquerProcessModel> processes = Model.Processes.Where(p => p.IsSelected);
+
+                foreach (ConquerProcessModel process in processes)
+                {
+                    foreach (ConquerTaskModel task in process.Tasks)
+                    {
+                        task.ConquerTask.Remove();
+                    }
+                }
+            }
+        }
+
+        private void ScreenshotSelect_OnClick(object sender, RoutedEventArgs e)
+        {
+            ConquerProcessModel process = Model.Processes.Where(p => p.IsSelected).First();
+
+            if (process != null)
+            {
+                process.Refresh();
+
+                ScreenshotSelectWindow window = new ScreenshotSelectWindow();
+                ShowAt((sender as Button), window);
+
+                window.Model.ScreenshotCopy = process.Screenshot.Clone() as Bitmap;
+                window.Show();
             }
         }
     }

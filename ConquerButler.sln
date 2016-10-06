@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConquerButler.Gui", "Conque
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConquerButler.Lib", "ConquerButler.Lib\ConquerButler.Lib.csproj", "{F58D8208-AAE3-46A0-BD27-A086D610DFFC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConquerButler.Tests", "ConquerButler.Tests\ConquerButler.Tests.csproj", "{84D718AC-98D0-45C2-8005-D7CE19A6BBEE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{F58D8208-AAE3-46A0-BD27-A086D610DFFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F58D8208-AAE3-46A0-BD27-A086D610DFFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F58D8208-AAE3-46A0-BD27-A086D610DFFC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84D718AC-98D0-45C2-8005-D7CE19A6BBEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84D718AC-98D0-45C2-8005-D7CE19A6BBEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84D718AC-98D0-45C2-8005-D7CE19A6BBEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84D718AC-98D0-45C2-8005-D7CE19A6BBEE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

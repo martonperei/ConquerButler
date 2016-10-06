@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using WindowsInput;
 
 namespace ConquerButler
@@ -49,12 +50,25 @@ namespace ConquerButler
 
         public void AddTask(ConquerTask task)
         {
-            _addedTasks.Enqueue(task);
+            if (!Tasks.Any(t => t.TaskType.Equals(task.TaskType)))
+            {
+                _addedTasks.Enqueue(task);
+            }
         }
 
         public void RemoveTask(ConquerTask task)
         {
             _removedTasks.Enqueue(task);
+        }
+
+        public void PauseTask<T>()
+        {
+            foreach (ConquerTask task in Tasks)
+            {
+                if (typeof(T) == task.GetType()) {
+                    task.Pause();
+                }
+            }
         }
 
         public void Tick(double dt)
@@ -158,6 +172,8 @@ namespace ConquerButler
 
                 List<TemplateMatch> matches = new List<TemplateMatch>();
 
+                Stopwatch watch = new Stopwatch();
+                watch.Start();
                 foreach (Bitmap template in templates)
                 {
                     TemplateMatch[] match = tm.ProcessImage(source, template, sourceRect);
@@ -165,7 +181,11 @@ namespace ConquerButler
                     matches.AddRange(match);
                 }
 
+                log.Info($"Detection took {watch.ElapsedMilliseconds}ms");
+
                 matches.Sort(_templateComparer);
+
+                log.Info($"+Sorting took {watch.ElapsedMilliseconds}ms");
 
                 return matches;
             }

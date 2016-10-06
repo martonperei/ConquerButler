@@ -1,13 +1,13 @@
-﻿using System.Collections.Generic;
-using System.Drawing;
-using System.Threading.Tasks;
-using AForge.Imaging;
+﻿using AForge.Imaging;
+using log4net;
 using PropertyChanged;
 using System;
-using System.Threading;
-using System.Drawing.Imaging;
+using System.Collections.Generic;
 using System.ComponentModel;
-using log4net;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ConquerButler
 {
@@ -57,7 +57,7 @@ namespace ConquerButler
         protected CancellationTokenSource CancellationToken;
         protected Task CurrentTask;
 
-        public virtual string DisplayInfo { get { return $"{TaskType} Running: {IsRunning} Next run: {NextRun} ms"; } }
+        public virtual string DisplayInfo { get { return $"{TaskType} Running: {IsRunning} Next run: {NextRun:F2}s"; } }
 
         public ConquerTask(string taskType, ConquerProcess process)
         {
@@ -71,7 +71,7 @@ namespace ConquerButler
             Process.AddTask(this);
         }
 
-        public void Stop()
+        public void Remove()
         {
             Cancel();
 

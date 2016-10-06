@@ -14,36 +14,50 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="3*" />
+            <ColumnDefinition Width="2*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left">
-            <Button x:Name="startTasks" Width="70" Height="25" Margin="0,0,0,10"
-                    Content="Start Tasks" Click="StartTasks_OnClick"/>
-            <Button x:Name="stopTasks" Width="70" Height="25" Margin="10,0,0,10"
-                    Content="Stop Tasks" Click="StopTasks_OnClick"/>
-            <Button x:Name="ScreenshotSelect" Width="70" Height="25" Margin="10,0,0,10"
-                    Content="Screenshot" Click="ScreenshotSelect_OnClick"/>
+            <Button x:Name="ResumeTasks" Width="70" Height="25" Margin="0,0,0,10"
+                    Content="Resume Tasks" Click="ResumeTasks_OnClick"/>
+            
+            <Button x:Name="PauseTasks" Width="70" Height="25" Margin="10,0,0,10"
+                    Content="Pause Tasks" Click="PauseTasks_OnClick"/>
+
+            <Button x:Name="AddTask" Width="70" Height="25"  Margin="10,0,0,10"
+                            Content="Add Tasks" Click="AddTasks_Click"/>
+
+            <Button x:Name="RemoveTask" Width="80" Height="25"  Margin="10,0,0,10"
+                            Content="Remove Tasks" Click="RemoveTasks_Click"/>
         </StackPanel>
 
         <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="ScreenshotSelect" Width="70" Height="25" Margin="10,0,10,10" HorizontalAlignment="Right"
+                    Content="Screenshot" Click="ScreenshotSelect_OnClick"/>
             <Label Margin="0,0,0,10" Content="X"></Label>
-            <Label Margin="0,0,0,10" Content="{Binding Path=Model.SelectedProcess.MousePosition.X}"></Label>
-            <Label Margin="30,0,0,10" Content="Y"></Label>
-            <Label Margin="0,0,0,10" Content="{Binding Path=Model.SelectedProcess.MousePosition.Y}" ></Label>
+            <Label Margin="0,0,0,10" Width="40" Content="{Binding Path=Model.SelectedProcess.MousePosition.X}"></Label>
+            <Label Margin="0,0,0,10" Content="Y"></Label>
+            <Label Margin="0,0,0,10" Width="40" Content="{Binding Path=Model.SelectedProcess.MousePosition.Y}" ></Label>
         </StackPanel>
 
-        <ListBox x:Name="processList"
+        <ListBox x:Name="ProcessList"
                  Grid.Row="1" Grid.ColumnSpan="2"
                  ScrollViewer.CanContentScroll="True"
+                 SelectionMode="Multiple"
                  ItemsSource="{Binding Path=Model.Processes}"
-                 SelectedItem="{Binding Model.SelectedProcess, Mode=TwoWay}"
-                 MouseDoubleClick="processList_MouseDoubleClick">
+                 SelectedItem="{Binding Model.SelectedProcess, Mode=TwoWay}">
+            <ListBox.Resources>
+                <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                    <EventSetter Event="MouseDoubleClick" Handler="ProcessItem_MouseDoubleClick" />
+                </Style>
+            </ListBox.Resources>
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <Grid ShowGridLines="False" Margin="10,10,10,10">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="30"/>
                             <RowDefinition Height="30"/>
                             <RowDefinition Height="30"/>
                             <RowDefinition Height="30"/>
@@ -55,30 +69,21 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <Image Grid.RowSpan="4" Grid.Column="0" Width="160" Source="{Binding Path=Thumbnail}"></Image>
+                        <Image Grid.RowSpan="5" Grid.Column="0" Width="160" Source="{Binding Path=Thumbnail}"></Image>
 
                         <Label Grid.Row="0" Grid.Column="1" Content="Name" HorizontalAlignment="Left" VerticalAlignment="Center"></Label>
                         <Image Grid.Row="0" Grid.Column="2" Width="100" Height="11" HorizontalAlignment="Left" VerticalAlignment="Center"
                                Source="{Binding Path=Name}"></Image>
 
                         <Label Grid.Row="1" Grid.Column="1" Content="Tasks" HorizontalAlignment="Left" VerticalAlignment="Center"></Label>
-                        
-                        <Button x:Name="AddTask"
-                                Grid.Row="2" Grid.Column="1"
-                                Width="50" Height="25"
-                            Content="Add" Click="AddTask_Click"/>
-                        <Button x:Name="RemoveTask" 
-                                Grid.Row="3" Grid.Column="1"
-                                Width="50" Height="25"
-                                Content="Remove" Click="RemoveTask_Click"/>
-                        
-                        <ListBox x:Name="taskList"
-                                 Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Grid.RowSpan="3"
-                                 Height="100" Width="410"
+
+                        <ListBox x:Name="TaskList"
+                                 Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Grid.RowSpan="4"
+                                 Height="120" Width="410"
                                  HorizontalAlignment="Left" VerticalAlignment="Center"
                                  ScrollViewer.CanContentScroll="True"
-                                 ItemsSource="{Binding Path=Tasks}"
-                                 SelectedItem="{Binding Model.SelectedTask, Mode=TwoWay}">
+                                 SelectionMode="Multiple"
+                                 ItemsSource="{Binding Path=Tasks}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Label Content="{Binding Path=DisplayInfo}"></Label>

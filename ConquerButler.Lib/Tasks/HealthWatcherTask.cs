@@ -33,6 +33,9 @@ namespace ConquerButler.Tasks
             _fullhpTemplate = LoadImage("images/fullhp.png");
 
             HealthState = HealthState.Unknown;
+
+            Interval = 5;
+            IntervalVariance = 0;
         }
 
         public override Task DoTick()

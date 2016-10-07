@@ -191,6 +191,9 @@ namespace ConquerButler
         [DllImport("User32.Dll")]
         internal static extern long SetCursorPos(int x, int y);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        internal static extern bool BlockInput(bool fBlockIt);
+
         [DllImport("user32.dll")]
         internal static extern bool ClientToScreen(IntPtr hWnd, ref Point lpPoint);
 

@@ -17,7 +17,7 @@ namespace ConquerButler.Tasks
 
         public int OreCount { get; protected set; }
 
-        public override string DisplayInfo { get { return $"{TaskType} Ores: {OreCount} | Running: {IsRunning} Next run: {NextRun:F2}s"; } }
+        public override string ResultDisplayInfo { get { return $"{OreCount}"; } }
 
         public MiningTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
@@ -26,6 +26,7 @@ namespace ConquerButler.Tasks
             _ironoreTemplate = LoadImage("images/ironore.png");
 
             Interval = 240;
+            IntervalVariance = 60;
         }
 
         public override async Task DoTick()

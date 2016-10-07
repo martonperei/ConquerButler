@@ -22,9 +22,9 @@ namespace ConquerButler.Tasks
         private readonly Bitmap _lowhpTemplate;
         private readonly Bitmap _fullhpTemplate;
 
-        public HealthState healthState { get; protected set; }
+        public HealthState HealthState { get; protected set; }
 
-        public override string DisplayInfo { get { return $"{TaskType} State: {healthState} | Running: {IsRunning} Next run: {NextRun:F2}s"; } }
+        public override string ResultDisplayInfo { get { return $"{HealthState}"; } }
 
         public HealthWatcherTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
@@ -32,7 +32,7 @@ namespace ConquerButler.Tasks
             _lowhpTemplate = LoadImage("images/lowhp.png");
             _fullhpTemplate = LoadImage("images/fullhp.png");
 
-            healthState = HealthState.Unknown;
+            HealthState = HealthState.Unknown;
         }
 
         public override Task DoTick()
@@ -41,7 +41,7 @@ namespace ConquerButler.Tasks
 
             if (isFullHp.Count > 0)
             {
-                healthState = HealthState.Full;
+                HealthState = HealthState.Full;
             }
             else
             {
@@ -49,18 +49,18 @@ namespace ConquerButler.Tasks
 
                 if (isLowHp.Count > 0)
                 {
-                    if (healthState == HealthState.Full)
+                    if (HealthState == HealthState.Full)
                     {
                         Process.InternalProcess.CloseMainWindow();
                     }
                     else
                     {
-                        healthState = HealthState.Low;
+                        HealthState = HealthState.Low;
                     }
                 }
                 else
                 {
-                    healthState = HealthState.Unknown;
+                    HealthState = HealthState.Unknown;
                 }
             }
 

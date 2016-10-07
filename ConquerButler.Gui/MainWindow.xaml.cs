@@ -23,11 +23,19 @@ namespace ConquerButler.Gui
 
         public ConquerTask ConquerTask { get; set; }
 
-        public string DisplayInfo
+        public string StateDisplayInfo
         {
             get
             {
-                return ConquerTask.DisplayInfo;
+                return $"{ConquerTask.TaskType,-15} {(ConquerTask.IsRunning ? ">>>" : "---")} {ConquerTask.NextRun,7:F2}";
+            }
+        }
+
+        public string ResultDisplayInfo
+        {
+            get
+            {
+                return ConquerTask.ResultDisplayInfo;
             }
         }
 
@@ -38,13 +46,16 @@ namespace ConquerButler.Gui
             ConquerTask = task;
 
             Observable.FromEventPattern<PropertyChangedEventArgs>(ConquerTask, "PropertyChanged")
-                .Where((e) => e.EventArgs.PropertyName.Equals("DisplayInfo"))
+                .Where((e) => e.EventArgs.PropertyName.Equals("IsRunning") ||
+                e.EventArgs.PropertyName.Equals("NextRun") ||
+                e.EventArgs.PropertyName.Equals("ResultDisplayInfo"))
                 .Buffer(TimeSpan.FromSeconds(0.1))
                 .Subscribe(e =>
                 {
                     if (e.Count > 0)
                     {
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(e.First().EventArgs.PropertyName));
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("StateDisplayInfo"));
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ResultDisplayInfo"));
                     }
                 });
         }
@@ -221,16 +232,6 @@ namespace ConquerButler.Gui
             });
         }
 
-        private void ProcessItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            ConquerProcessModel process = (e.Source as ListBoxItem)?.DataContext as ConquerProcessModel;
-
-            if (process != null)
-            {
-                Helpers.SetForegroundWindow(process.ConquerProcess.InternalProcess);
-            }
-        }
-
         private void ShowAt(Control control, Window window)
         {
             System.Windows.Point mousePositionInApp = Mouse.GetPosition(control);
@@ -315,6 +316,16 @@ namespace ConquerButler.Gui
 
                 window.Model.ScreenshotCopy = process.Screenshot.Clone() as Bitmap;
                 window.Show();
+            }
+        }
+
+        private void ShowProcess_OnClick(object sender, RoutedEventArgs e)
+        {
+            ConquerProcessModel process = (sender as Button).DataContext as ConquerProcessModel;
+
+            if (process != null)
+            {
+                Helpers.SetForegroundWindow(process.ConquerProcess.InternalProcess);
             }
         }
     }

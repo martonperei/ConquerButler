@@ -1,10 +1,12 @@
 ﻿using PropertyChanged;
 using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 namespace ConquerButler.Gui
 {
@@ -13,6 +15,8 @@ namespace ConquerButler.Gui
     {
         public System.Drawing.Bitmap ScreenshotCopy { get; set; }
         public BitmapSource CanvasSource { get; set; }
+
+        public Point MousePosition { get; set; }
     }
 
     public partial class ScreenshotSelectWindow : Window
@@ -22,9 +26,16 @@ namespace ConquerButler.Gui
         private Point drawingStartPoint;
         private Stroke drawingRectangle;
 
+        private DispatcherTimer _mouseUpdate = new DispatcherTimer();
+
         public ScreenshotSelectWindow()
         {
             InitializeComponent();
+
+            _mouseUpdate = new DispatcherTimer();
+            _mouseUpdate.Interval = new TimeSpan(0, 0, 0, 0, 100);
+            _mouseUpdate.Tick += (s, e) => Model.MousePosition = Mouse.GetPosition(ScreenshotCanvas);
+            _mouseUpdate.Start();
 
             Closed += ScreenshotSelectWindow_Closed;
         }
@@ -70,7 +81,8 @@ namespace ConquerButler.Gui
 
                 Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog
                 {
-                    FileName = "Template",
+                    InitialDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"),
+                    FileName = "template",
                     DefaultExt = ".png",
                     Filter = "Image (.png)|*.png"
                 };
@@ -152,11 +164,6 @@ namespace ConquerButler.Gui
                 collection[3] = d;
                 collection[4] = a;
             }
-        }
-
-        private void SetPoints(Stroke stroke, double x, double y, double w, double h)
-        {
-
         }
     }
 }

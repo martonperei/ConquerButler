@@ -47,12 +47,13 @@ namespace ConquerButler
 
         public ConquerProcess Process { get; }
         public double Interval { get; set; } = 10;
-        public long StartTick { get; set; }
-        public double NextRun { get; set; }
+        public int IntervalVariance { get; set; } = 1;
+        public long StartTick { get; protected set; }
+        public double NextRun { get; protected set; }
 
         public int Priority { get; protected set; } = DEFAULT_PRIORITY;
 
-        public bool Enabled { get; set; } = true;
+        public bool Enabled { get; protected set; } = true;
         public bool IsRunning { get; protected set; } = false;
         public bool IsPaused { get; protected set; } = true;
         public bool NeedsUserFocus { get; protected set; } = false;
@@ -62,13 +63,17 @@ namespace ConquerButler
         protected CancellationTokenSource CancellationToken;
         protected Task CurrentTask;
 
-        public virtual string DisplayInfo { get { return $"{TaskType} Running: {IsRunning} Next run: {NextRun:F2}s"; } }
+        protected readonly Random Random;
+
+        public virtual string ResultDisplayInfo { get { return ""; } }
 
         public ConquerTask(string taskType, ConquerProcess process)
         {
             TaskType = taskType;
             Scheduler = process.Scheduler;
             Process = process;
+
+            Random = new Random();
         }
 
         public void Add()
@@ -98,7 +103,7 @@ namespace ConquerButler
                     CurrentTask = Task.Run(async () =>
                     {
                         StartTick = Scheduler.Clock.Tick;
-                        NextRun = -1;
+                        NextRun = 0;
 
                         try
                         {
@@ -112,7 +117,7 @@ namespace ConquerButler
                         }
                         finally
                         {
-                            NextRun = Interval;
+                            NextRun = Interval + Random.Next(-IntervalVariance, IntervalVariance);
 
                             IsRunning = false;
                         }

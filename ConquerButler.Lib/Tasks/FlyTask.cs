@@ -44,7 +44,7 @@ namespace ConquerButler.Tasks
 
                     Point p = Process.GetCursorPosition();
 
-                    Process.LeftClickOnPoint(MatchToPoint(isXpFly[0]));
+                    Process.LeftClick(isXpFly[0].Center());
 
                     Scheduler.Wait(500);
 

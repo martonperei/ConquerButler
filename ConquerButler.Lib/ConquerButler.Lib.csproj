@@ -136,6 +136,7 @@
     <Compile Include="ConquerProcess.cs" />
     <Compile Include="ConquerTask.cs" />
     <Compile Include="Helpers.cs" />
+    <Compile Include="MatchExtensions.cs" />
     <Compile Include="ProcessWatcher.cs" />
     <Compile Include="Tasks\CustomTask.cs" />
     <Compile Include="Tasks\FlyTask.cs" />

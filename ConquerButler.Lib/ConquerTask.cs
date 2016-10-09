@@ -157,15 +157,13 @@ namespace ConquerButler
             CancellationToken?.Cancel();
         }
 
-        public async Task<bool> RequestInputFocus(Action action, int priority)
+        public Task RequestInputFocus(Action action, int priority)
         {
             CancellationToken.Token.ThrowIfCancellationRequested();
 
             var focusAction = Scheduler.RequestInputFocus(this, action, priority, !NeedsUserFocus);
 
-            await focusAction.TaskCompletion.Task;
-
-            return focusAction.TaskCompletion.Task.Result;
+            return focusAction.TaskCompletion.Task;
         }
 
         protected TemplatePyramid LoadTemplate(string fileName)
@@ -192,7 +190,7 @@ namespace ConquerButler
 
                 LinearizedMapPyramid sourceTemplate = LinearizedMapPyramid.CreatePyramid(source.ToBgr());
 
-                log.Info($"Process {Process.Id} - task {TaskType} - preparing took {watch.ElapsedMilliseconds}ms");
+                log.Debug($"Process {Process.Id} - task {TaskType} - preparing took {watch.ElapsedMilliseconds}ms");
 
                 watch.Restart();
 
@@ -211,17 +209,12 @@ namespace ConquerButler
                     matches.Add(match);
                 }
 
-                log.Info($"Process {Process.Id} - task {TaskType} - detection took {watch.ElapsedMilliseconds}ms");
+                log.Debug($"Process {Process.Id} - task {TaskType} - detection took {watch.ElapsedMilliseconds}ms");
 
                 matches.Sort(_matchComparer);
 
                 return matches;
             }
-        }
-
-        public Point MatchToPoint(Match m)
-        {
-            return new Point(m.BoundingRect.X + m.BoundingRect.Width / 2, m.BoundingRect.Y + m.BoundingRect.Height / 2);
         }
 
         protected bool Equals(ConquerTask other)

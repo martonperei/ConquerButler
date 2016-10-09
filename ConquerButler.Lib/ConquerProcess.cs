@@ -185,23 +185,33 @@ namespace ConquerButler
                 Helpers.IsCursorInsideWindow(Helpers.GetCursorPosition(InternalProcess), InternalProcess);
         }
 
-        public void LeftClickOnPoint(Point p, int variation = 5)
+        private void TranslateToVirtualScreen(ref Point p, int variation = 5)
         {
             p.X = p.X + _random.Next(-variation, variation);
             p.Y = p.Y + _random.Next(-variation, variation);
 
             Helpers.ClientToVirtualScreen(InternalProcess, ref p);
+        }
+
+        public void RightClick(Point p, int variation = 5)
+        {
+            TranslateToVirtualScreen(ref p, variation);
+
+            Simulator.Mouse.MoveMouseTo(p.X, p.Y);
+            Simulator.Mouse.RightButtonClick();
+        }
+
+        public void LeftClick(Point p, int variation = 5)
+        {
+            TranslateToVirtualScreen(ref p, variation);
 
             Simulator.Mouse.MoveMouseTo(p.X, p.Y);
             Simulator.Mouse.LeftButtonClick();
         }
 
-        public void MoveToPoint(Point p, int variation = 5)
+        public void MoveTo(Point p, int variation = 5)
         {
-            p.X = p.X + _random.Next(-variation, variation);
-            p.Y = p.Y + _random.Next(-variation, variation);
-
-            Helpers.ClientToVirtualScreen(InternalProcess, ref p);
+            TranslateToVirtualScreen(ref p, variation);
 
             Simulator.Mouse.MoveMouseTo(p.X, p.Y);
         }

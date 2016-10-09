@@ -42,16 +42,6 @@ namespace ConquerButler
         public Point MousePosition { get; set; }
         public InputSimulator Simulator { get; protected set; }
 
-        private ResetLazy<LinearizedMapPyramid> _lazyScreenshotTemplate;
-
-        public LinearizedMapPyramid ScreenshotTemplate
-        {
-            get
-            {
-                return _lazyScreenshotTemplate.Value;
-            }
-        }
-
         public ObservableCollection<ConquerTask> Tasks { get; set; }
 
         public event Action<bool> ProcessStateChange;
@@ -69,8 +59,6 @@ namespace ConquerButler
             Scheduler = scheduler;
             Tasks = new ObservableCollection<ConquerTask>();
             Simulator = new InputSimulator();
-
-            _lazyScreenshotTemplate = new ResetLazy<LinearizedMapPyramid>(CreateScreenshotTemplate);
 
             _random = new Random();
 
@@ -100,11 +88,6 @@ namespace ConquerButler
                     task.Pause();
                 }
             }
-        }
-
-        public void FixedTick(double dt)
-        {
-            _lazyScreenshotTemplate.Reset();
         }
 
         public void Tick(double dt)
@@ -193,7 +176,7 @@ namespace ConquerButler
             return Helpers.PrintWindow(InternalProcess);
         }
 
-        private LinearizedMapPyramid CreateScreenshotTemplate()
+        public LinearizedMapPyramid ScreenshotTemplate()
         {
             using (var screenshot = Screenshot())
             {

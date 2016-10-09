@@ -22,10 +22,7 @@ namespace ConquerButler
 
                 if (c == 0)
                 {
-                    bool isXForeground = Helpers.IsForegroundWindow(x.Task.Process.InternalProcess);
-                    bool isYForeground = Helpers.IsForegroundWindow(y.Task.Process.InternalProcess);
-
-                    c = isXForeground.CompareTo(isYForeground);
+                    c = x.Task.Process.Id.CompareTo(y.Task.Process.Id);
 
                     if (c == 0)
                     {
@@ -76,7 +73,7 @@ namespace ConquerButler
         public ConquerScheduler()
         {
             Processes = new ObservableCollection<ConquerProcess>();
-            TargetElapsedTime = 1f;
+            TargetElapsedTime = 1 / 60f;
             Clock = new Clock();
 
             _endedProcesses = new ConcurrentQueue<ConquerProcess>();

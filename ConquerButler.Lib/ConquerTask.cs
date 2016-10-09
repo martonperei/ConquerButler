@@ -1,5 +1,4 @@
 ﻿using Accord.Extensions.Imaging.Algorithms.LINE2D;
-using AForge.Imaging;
 using DotImaging;
 using log4net;
 using PropertyChanged;
@@ -182,19 +181,22 @@ namespace ConquerButler
 
         public List<Match> FindMatches(float similiarity, Rectangle sourceRect, params TemplatePyramid[] templates)
         {
+            return FindMatches(similiarity, sourceRect, templates.ToList());
+        }
+
+        public List<Match> FindMatches(float similiarity, Rectangle sourceRect, List<TemplatePyramid> templates)
+        {
             Stopwatch watch = new Stopwatch();
 
             watch.Start();
 
-            LinearizedMapPyramid source = Process.ScreenshotTemplate;
+            LinearizedMapPyramid source = Process.ScreenshotTemplate();
 
             log.Info($"Process {Process.Id} - task {TaskType} - preparing took {watch.ElapsedMilliseconds}ms");
 
             watch.Restart();
 
-            var bestRepresentatives = new List<Match>();
-
-            List<Match> matches = source.MatchTemplates(templates.ToList(), (int)(similiarity * 100), true);
+            List<Match> matches = source.MatchTemplates(templates, (int)(similiarity * 100), true);
 
             matches.Sort(_matchComparer);
 

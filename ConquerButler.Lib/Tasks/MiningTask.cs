@@ -1,5 +1,4 @@
 ﻿using Accord.Extensions.Imaging.Algorithms.LINE2D;
-using AForge.Imaging;
 using log4net;
 using System.Collections.Generic;
 using System.Drawing;
@@ -47,9 +46,9 @@ namespace ConquerButler.Tasks
                 {
                     Process.MoveToPoint(MatchToPoint(m));
                     Process.LeftClickOnPoint(MatchToPoint(m));
-                    Scheduler.Wait(125);
+                    Scheduler.Wait(250);
                     Process.LeftClickOnPoint(new Point(700, 100), 20);
-                    Scheduler.Wait(125);
+                    Scheduler.Wait(250);
 
                     OreCount--;
                 }, i));

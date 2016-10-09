@@ -47,7 +47,7 @@ namespace ConquerButler.Tasks
 
             HealthState = HealthState.None;
 
-            Interval = 0;
+            Interval = 2;
             IntervalVariance = 0;
         }
 

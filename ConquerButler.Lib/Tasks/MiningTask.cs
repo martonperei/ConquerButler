@@ -1,8 +1,8 @@
 ﻿using Accord.Extensions.Imaging.Algorithms.LINE2D;
 using log4net;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Threading.Tasks;
+using System.Drawing;
 using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
 
 namespace ConquerButler.Tasks
@@ -12,6 +12,8 @@ namespace ConquerButler.Tasks
         private static ILog log = LogManager.GetLogger(typeof(MiningTask));
 
         public static string TASK_TYPE_NAME = "Mining";
+
+        private static Point DROP_POINT = new Point(700, 100);
 
         private readonly TemplatePyramid _copperoreTemplate;
         private readonly TemplatePyramid _ironoreTemplate;
@@ -44,10 +46,9 @@ namespace ConquerButler.Tasks
 
                 taskList.Add(RequestInputFocus(() =>
                 {
-                    Process.MoveToPoint(MatchToPoint(m));
                     Process.LeftClickOnPoint(MatchToPoint(m));
                     Scheduler.Wait(250);
-                    Process.LeftClickOnPoint(new Point(700, 100), 20);
+                    Process.LeftClickOnPoint(DROP_POINT, 20);
                     Scheduler.Wait(250);
 
                     OreCount--;

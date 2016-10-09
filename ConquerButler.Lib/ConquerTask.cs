@@ -6,12 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Threading;
 using System.Threading.Tasks;
 using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
 using System.Linq;
+using System.Drawing;
 
 namespace ConquerButler
 {
@@ -171,11 +170,9 @@ namespace ConquerButler
 
         protected TemplatePyramid LoadTemplate(string fileName)
         {
-            using (var bmp = new Bitmap(fileName))
+            using (var image = new Bitmap(fileName))
             {
-                Bgr<byte>[,] bgr = bmp.ConvertToFormat(PixelFormat.Format24bppRgb).ToArray() as Bgr<byte>[,];
-
-                return TemplatePyramid.CreatePyramidFromPreparedBWImage(bgr.ToGray(), fileName);
+                return TemplatePyramid.CreatePyramid(image.ToBgr(), fileName);
             }
         }
 
@@ -186,23 +183,40 @@ namespace ConquerButler
 
         public List<Match> FindMatches(float similiarity, Rectangle sourceRect, List<TemplatePyramid> templates)
         {
-            Stopwatch watch = new Stopwatch();
+            using (var screenshot = Process.Screenshot())
+            using (var source = Helpers.CropBitmap(screenshot, sourceRect))
+            {
+                Stopwatch watch = new Stopwatch();
 
-            watch.Start();
+                watch.Start();
 
-            LinearizedMapPyramid source = Process.ScreenshotTemplate();
+                LinearizedMapPyramid sourceTemplate = LinearizedMapPyramid.CreatePyramid(source.ToBgr());
 
-            log.Info($"Process {Process.Id} - task {TaskType} - preparing took {watch.ElapsedMilliseconds}ms");
+                log.Info($"Process {Process.Id} - task {TaskType} - preparing took {watch.ElapsedMilliseconds}ms");
 
-            watch.Restart();
+                watch.Restart();
 
-            List<Match> matches = source.MatchTemplates(templates, (int)(similiarity * 100), true);
+                List<Match> matches = new List<Match>();
 
-            matches.Sort(_matchComparer);
+                foreach (Match m in sourceTemplate.MatchTemplates(templates, (int)(similiarity * 100), true))
+                {
+                    var match = new Match
+                    {
+                        X = m.X + sourceRect.Left,
+                        Y = m.Y + sourceRect.Top,
+                        Score = m.Score,
+                        Template = m.Template
+                    };
 
-            log.Info($"Process {Process.Id} - task {TaskType} - detection took {watch.ElapsedMilliseconds}ms");
+                    matches.Add(match);
+                }
 
-            return matches;
+                log.Info($"Process {Process.Id} - task {TaskType} - detection took {watch.ElapsedMilliseconds}ms");
+
+                matches.Sort(_matchComparer);
+
+                return matches;
+            }
         }
 
         public Point MatchToPoint(Match m)

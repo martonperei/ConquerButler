@@ -1,19 +1,17 @@
-﻿using log4net;
+﻿using System.Drawing;
+using log4net;
 using PropertyChanged;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using System.Windows;
 
 namespace ConquerButler.Gui
 {
@@ -83,13 +81,15 @@ namespace ConquerButler.Gui
 
         public Bitmap Screenshot { get; set; }
 
+        private static Rectangle NAME_RECT = new Rectangle(108, 130, 100, 11);
+
         public BitmapSource Name
         {
             get
             {
                 if (Screenshot != null)
                 {
-                    using (var cropped = Helpers.CropBitmap(Screenshot, new Rectangle(108, 130, 100, 11)))
+                    using (var cropped = Helpers.CropBitmap(Screenshot, NAME_RECT))
                     {
                         return cropped.ToBitmapSource();
                     }

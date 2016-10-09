@@ -1,13 +1,11 @@
-﻿using Accord.Extensions.Imaging.Algorithms.LINE2D;
-using DotImaging;
-using log4net;
+﻿using log4net;
 using PropertyChanged;
 using System;
+using System.Drawing;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using WindowsInput;
@@ -176,16 +174,6 @@ namespace ConquerButler
             return Helpers.PrintWindow(InternalProcess);
         }
 
-        public LinearizedMapPyramid ScreenshotTemplate()
-        {
-            using (var screenshot = Screenshot())
-            {
-                Bgr<byte>[,] bgr = screenshot.ToArray() as Bgr<byte>[,];
-
-                return LinearizedMapPyramid.CreatePyramid(bgr);
-            }
-        }
-
         public Point GetCursorPosition()
         {
             return Helpers.GetCursorPosition(InternalProcess);
@@ -239,8 +227,6 @@ namespace ConquerButler
                 {
                     task.Dispose();
                 }
-
-                Tasks.Clear();
             }
         }
     }

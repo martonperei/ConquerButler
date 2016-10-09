@@ -21,7 +21,7 @@
                     Click="SaveButton_Click"
                     Width="40" Height="25" HorizontalAlignment="Left" Margin="0,0,0,0"></Button>
             <Button x:Name="CancelButton" Content="Cancel"
-                    Click="CancelButton_Click" 
+                    IsCancel="True" Click="CancelButton_Click" 
                     Width="40" Height="25" HorizontalAlignment="Left" Margin="0,10,0,0"></Button>
         </StackPanel>
         <ListBox x:Name="TaskTypeList"

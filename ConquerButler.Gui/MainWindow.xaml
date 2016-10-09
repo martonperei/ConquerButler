@@ -8,6 +8,25 @@
         Title="Conquer Butler" Icon="chef.ico" Height="700" Width="680"
         DataContext="{Binding RelativeSource={RelativeSource Mode=Self}}"
         Closed="Window_Closed">
+    <Window.Resources>
+        <Style x:Key="DisconnectStyle" TargetType="TextBlock">
+            <Setter Property="Background" Value="#70FFFFFF" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Disconnected}" Value="True">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Setter Property="Foreground" Value="Red"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Disconnected}" Value="False">
+                    <Setter Property="Visibility" Value="Hidden"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
     <Grid Margin="10,10,10,10">
         <Grid.RowDefinitions>
             <RowDefinition Height="40"/>
@@ -37,109 +56,119 @@
                     Content="Screenshot" Click="ScreenshotSelect_OnClick"/>
         </StackPanel>
 
-        <ListBox x:Name="ProcessList"
+        <DataGrid x:Name="ProcessGrid"
                  Grid.Row="1" Grid.ColumnSpan="2"
-                 ScrollViewer.CanContentScroll="True"
-                 SelectionMode="Multiple"
+                 ScrollViewer.CanContentScroll="False"
+                 SelectionMode="Extended"
+                 AutoGenerateColumns="False" 
                  ItemsSource="{Binding Model.Processes}"
-                 SelectedItem="{Binding Model.SelectedProcess, Mode=TwoWay}">
-            <ListBox.Resources>
-                <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                 SelectedItem="{Binding Model.SelectedProcess, Mode=TwoWay}"
+                 SelectionUnit="FullRow"
+                 HeadersVisibility="Column" GridLinesVisibility="None">
+            <DataGrid.Resources>
+                <Style TargetType="DataGridRow">
                     <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
                 </Style>
-            </ListBox.Resources>
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Grid ShowGridLines="False" Margin="10,10,10,10">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="40"/>
-                            <RowDefinition Height="40"/>
-                            <RowDefinition Height="40"/>
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="220" />
-                            <ColumnDefinition Width="60" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="Padding" Value="10"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                <Border Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                                    <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                </Style>
+            </DataGrid.Resources>
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Thumbnail" MinWidth="280" Width="280">
+                    <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Image Source="{Binding Thumbnail}">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Disconnected}" Value="True">
+                                                        <Setter Property="Opacity" Value="0.5"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Disconnected}" Value="False">
+                                                        <Setter Property="Opacity" Value="1"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="Disconnected" FontWeight="Bold" FontSize="32"
+                                               Style="{StaticResource DisconnectStyle}">
+                                    </TextBlock>
+                                    <Button Width="40" Height="25" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                        Content="Show" Click="ShowProcess_OnClick"/>
+                                </Grid>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Data" MinWidth="320" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid ShowGridLines="False">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="40"/>
+                                    <RowDefinition Height="40"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-                        <Image Grid.RowSpan="4" Grid.Column="0" Width="220" Source="{Binding Thumbnail}" VerticalAlignment="Top">
-                            <Image.Style>
-                                <Style TargetType="Image">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Disconnected}" Value="True">
-                                            <Setter Property="Opacity" Value="0.5"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Disconnected}" Value="False">
-                                            <Setter Property="Opacity" Value="1"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Image.Style>
-                        </Image>
+                                <Label Grid.Row="0" Grid.Column="0" Content="Id" HorizontalAlignment="Left" VerticalAlignment="Top"></Label>
+                                <Label Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                           Content="{Binding ConquerProcess.Id}"></Label>
 
-                        <Label Grid.Row="0" Grid.Column="0" Grid.RowSpan="4" HorizontalAlignment="Center" VerticalAlignment="Top"
-                               Content="Disconnected" FontWeight="Bold" FontSize="32">
-                            <Label.Style>
-                                <Style TargetType="Label">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Disconnected}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                            <Setter Property="Foreground" Value="Red"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Disconnected}" Value="False">
-                                            <Setter Property="Visibility" Value="Hidden"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Label.Style>
-                        </Label>
+                                <Label Grid.Row="1" Grid.Column="0" Content="Name" HorizontalAlignment="Left" VerticalAlignment="Top"></Label>
+                                <Image Grid.Row="1" Grid.Column="1" Width="100" Height="11" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                           Source="{Binding Name}"></Image>
 
-                        <Button Grid.Row="3" Grid.Column="0" Width="40" Height="25" HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                            Content="Show" Click="ShowProcess_OnClick"/>
+                                <Label Grid.Row="2" Grid.Column="0" Content="Tasks" HorizontalAlignment="Left" VerticalAlignment="Top"></Label>
 
-                        <Label Grid.Row="0" Grid.Column="1" Content="Id" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"></Label>
-                        <Label Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center"
-                               Content="{Binding ConquerProcess.Id}"></Label>
+                                <ListBox x:Name="TaskList"
+                                         Grid.Row="2" Grid.Column="1"
+                                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                         ScrollViewer.CanContentScroll="True"
+                                         SelectionMode="Multiple"
+                                         ItemsSource="{Binding Tasks}">
+                                    <ListBox.Resources>
+                                        <Style TargetType="{x:Type Label}">
+                                            <Setter Property="FontFamily" Value="Consolas"/>
+                                        </Style>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        </Style>
+                                    </ListBox.Resources>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
 
-                        <Label Grid.Row="1" Grid.Column="1" Content="Name" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"></Label>
-                        <Image Grid.Row="1" Grid.Column="2" Width="100" Height="11" HorizontalAlignment="Left" VerticalAlignment="Center"
-                               Source="{Binding Name}"></Image>
-
-                        <Label Grid.Row="2" Grid.Column="1" Content="Tasks" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"></Label>
-
-                        <ListBox x:Name="TaskList"
-                                 Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="3" Grid.RowSpan="2"
-                                 Height="120" Width="300"
-                                 HorizontalAlignment="Left" VerticalAlignment="Center"
-                                 ScrollViewer.CanContentScroll="True"
-                                 SelectionMode="Multiple"
-                                 ItemsSource="{Binding Tasks}">
-                            <ListBox.Resources>
-                                <Style TargetType="{x:Type Label}">
-                                    <Setter Property="FontFamily" Value="Consolas"/>
-                                </Style>
-                                <Style TargetType="ListBoxItem">
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                </Style>
-                            </ListBox.Resources>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <Label Grid.Column="0" HorizontalAlignment="Left" Content="{Binding StateDisplayInfo}"></Label>
-                                        <Label Grid.Column="1" HorizontalAlignment="Right" Content="{Binding ResultDisplayInfo}"></Label>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </Grid>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+                                                <Label Grid.Column="0" HorizontalAlignment="Left" Content="{Binding StateDisplayInfo}"></Label>
+                                                <Label Grid.Column="1" HorizontalAlignment="Right" Content="{Binding ResultDisplayInfo}"></Label>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
 </Window>

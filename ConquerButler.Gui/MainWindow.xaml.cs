@@ -244,15 +244,6 @@ namespace ConquerButler.Gui
             });
         }
 
-        private void ShowAt(Control control, Window window)
-        {
-            System.Windows.Point mousePositionInApp = Mouse.GetPosition(control);
-            System.Windows.Point mousePositionInScreenCoordinates = control.PointToScreen(mousePositionInApp);
-
-            window.Left = mousePositionInScreenCoordinates.X;
-            window.Top = mousePositionInScreenCoordinates.Y;
-        }
-
         private void ResumeTasks_OnClick(object sender, RoutedEventArgs e)
         {
             IEnumerable<ConquerProcessModel> processes = Model.Processes.Where(p => p.IsSelected);
@@ -282,7 +273,8 @@ namespace ConquerButler.Gui
                 Button addTaskButton = (sender as Button);
 
                 TaskViewWindow window = new TaskViewWindow();
-                ShowAt(addTaskButton, window);
+                window.Owner = this;
+                window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
                 window.Model.Processes = processes;
 
@@ -317,14 +309,15 @@ namespace ConquerButler.Gui
 
         private void ScreenshotSelect_OnClick(object sender, RoutedEventArgs e)
         {
-            ConquerProcessModel process = Model.Processes.Where(p => p.IsSelected).First();
+            ConquerProcessModel process = Model.Processes.Where(p => p.IsSelected).FirstOrDefault();
 
             if (process != null)
             {
                 process.Refresh();
 
                 ScreenshotSelectWindow window = new ScreenshotSelectWindow();
-                ShowAt((sender as Button), window);
+                window.Owner = this;
+                window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
                 window.Model.ScreenshotCopy = process.Screenshot.Clone() as Bitmap;
                 window.Show();

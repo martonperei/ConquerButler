@@ -133,11 +133,6 @@ namespace ConquerButler
                     _accumulator -= TargetElapsedTime;
 
                     Clock.FixedUpdate();
-
-                    foreach (ConquerProcess process in Processes)
-                    {
-                        process.FixedTick(TargetElapsedTime);
-                    }
                 }
 
                 while (_endedProcesses.Count > 0)

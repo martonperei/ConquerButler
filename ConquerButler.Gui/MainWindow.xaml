@@ -143,11 +143,12 @@
                                          SelectionMode="Multiple"
                                          ItemsSource="{Binding Tasks}">
                                     <ListBox.Resources>
-                                        <Style TargetType="{x:Type Label}">
+                                        <Style TargetType="Label">
                                             <Setter Property="FontFamily" Value="Consolas"/>
                                         </Style>
                                         <Style TargetType="ListBoxItem">
                                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
                                         </Style>
                                     </ListBox.Resources>
                                     <ListBox.ItemTemplate>

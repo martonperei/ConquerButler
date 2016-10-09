@@ -76,7 +76,7 @@ namespace ConquerButler
         public ConquerScheduler()
         {
             Processes = new ObservableCollection<ConquerProcess>();
-            TargetElapsedTime = 1f / 60.0f;
+            TargetElapsedTime = 1f;
             Clock = new Clock();
 
             _endedProcesses = new ConcurrentQueue<ConquerProcess>();
@@ -136,6 +136,11 @@ namespace ConquerButler
                     _accumulator -= TargetElapsedTime;
 
                     Clock.FixedUpdate();
+
+                    foreach (ConquerProcess process in Processes)
+                    {
+                        process.FixedTick(TargetElapsedTime);
+                    }
                 }
 
                 while (_endedProcesses.Count > 0)
@@ -183,11 +188,14 @@ namespace ConquerButler
                     {
                         if (actionFocus.BringToForeground)
                         {
-                            log.Info($"Bringing process {actionFocus.Task.Process.Id} to foreground");
+                            if (!Helpers.IsForegroundWindow(actionFocus.Task.Process.InternalProcess))
+                            {
+                                log.Info($"Bringing process {actionFocus.Task.Process.Id} to foreground");
 
-                            Helpers.SetForegroundWindow(actionFocus.Task.Process.InternalProcess);
+                                Helpers.SetForegroundWindow(actionFocus.Task.Process.InternalProcess);
 
-                            Wait(500);
+                                Wait(500);
+                            }
 
                             actionFocus.Action();
 

@@ -37,6 +37,50 @@
     </ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Accord, Version=3.3.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.3.3.0\lib\net45\Accord.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Accord.Extensions.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.Extensions.Core.3.0.1\lib\net45\Accord.Extensions.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Accord.Extensions.Imaging.AForgeInterop, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.Extensions.Imaging.AForgeInterop.3.0.1\lib\net45\Accord.Extensions.Imaging.AForgeInterop.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Accord.Extensions.Imaging.Algorithms, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.Extensions.Imaging.Algorithms.3.0.1\lib\net45\Accord.Extensions.Imaging.Algorithms.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Accord.Extensions.Imaging.Algorithms.LINE2D, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\lib\net45\Accord.Extensions.Imaging.Algorithms.LINE2D.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Accord.Extensions.Math, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.Extensions.Math.3.0.1\lib\net45\Accord.Extensions.Math.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Accord.Imaging, Version=3.3.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.Imaging.3.3.0\lib\net45\Accord.Imaging.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Accord.MachineLearning, Version=3.3.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.MachineLearning.3.3.0\lib\net45\Accord.MachineLearning.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Accord.Math, Version=3.3.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.Math.3.3.0\lib\net45\Accord.Math.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Accord.Math.Core, Version=3.3.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.Math.3.3.0\lib\net45\Accord.Math.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Accord.Statistics, Version=3.3.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=MSIL">
+      <HintPath>..\packages\Accord.Statistics.3.3.0\lib\net45\Accord.Statistics.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="AForge, Version=2.2.5.0, Culture=neutral, PublicKeyToken=c1db6ff4eaa06aeb, processorArchitecture=MSIL">
       <HintPath>..\packages\AForge.2.2.5\lib\AForge.dll</HintPath>
       <Private>True</Private>
@@ -49,18 +93,31 @@
       <HintPath>..\packages\AForge.Math.2.2.5\lib\AForge.Math.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="DotImaging.BitmapInterop, Version=4.7.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\DotImaging.BitmapInterop.4.8.2\lib\net45\DotImaging.BitmapInterop.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="DotImaging.GenericImage, Version=4.7.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\DotImaging.GenericImage.4.8.2\lib\net45\DotImaging.GenericImage.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="DotImaging.Primitives2D, Version=4.7.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\DotImaging.Primitives2D.4.8.2\lib\net45\DotImaging.Primitives2D.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="log4net, Version=1.2.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="PresentationCore" />
-    <Reference Include="PropertyChanged, Version=1.51.3.0, Culture=neutral, PublicKeyToken=ee3ee20bcf148ddd, processorArchitecture=MSIL">
-      <HintPath>..\packages\PropertyChanged.Fody.1.51.3\lib\dotnet\PropertyChanged.dll</HintPath>
+    <Reference Include="PropertyChanged, Version=1.52.0.0, Culture=neutral, PublicKeyToken=ee3ee20bcf148ddd, processorArchitecture=MSIL">
+      <HintPath>..\packages\PropertyChanged.Fody.1.52.0\lib\dotnet\PropertyChanged.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -84,6 +141,7 @@
     <Compile Include="ConquerTask.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="ProcessWatcher.cs" />
+    <Compile Include="ResetLazy.cs" />
     <Compile Include="Tasks\CustomTask.cs" />
     <Compile Include="Tasks\FlyTask.cs" />
     <Compile Include="Tasks\HealthWatcherTask.cs" />
@@ -95,6 +153,7 @@
     <Compile Include="NativeMethods.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -107,7 +166,11 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.1.29.4\build\dotnet\Fody.targets'))" />
+    <Error Condition="!Exists('..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets'))" />
+    <Error Condition="!Exists('..\packages\Accord.3.3.0\build\Accord.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.3.3.0\build\Accord.targets'))" />
   </Target>
+  <Import Project="..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets" Condition="Exists('..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets')" />
+  <Import Project="..\packages\Accord.3.3.0\build\Accord.targets" Condition="Exists('..\packages\Accord.3.3.0\build\Accord.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

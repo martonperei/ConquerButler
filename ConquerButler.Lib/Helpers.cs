@@ -83,11 +83,6 @@ namespace ConquerButler
 
         public static bool SetForegroundWindow(Process process)
         {
-            if (IsForegroundWindow(process))
-            {
-                return true;
-            }
-
             NativeMethods.ShowWindow(process.MainWindowHandle, NativeMethods.SW_RESTORE);
 
             NativeMethods.SetForegroundWindow(process.MainWindowHandle);

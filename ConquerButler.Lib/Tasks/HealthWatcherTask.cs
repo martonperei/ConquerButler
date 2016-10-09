@@ -1,10 +1,10 @@
-﻿using AForge.Imaging;
+﻿using Accord.Extensions.Imaging.Algorithms.LINE2D;
 using log4net;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
 
 namespace ConquerButler.Tasks
 {
@@ -28,8 +28,8 @@ namespace ConquerButler.Tasks
 
         public static string TASK_TYPE_NAME = "HealthWatcher";
 
-        private readonly Bitmap _lowhpTemplate;
-        private readonly Bitmap _fullhpTemplate;
+        private readonly TemplatePyramid _lowhpTemplate;
+        private readonly TemplatePyramid _fullhpTemplate;
 
         public HealthState HealthState { get; protected set; }
 
@@ -42,18 +42,18 @@ namespace ConquerButler.Tasks
         public HealthWatcherTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
-            _lowhpTemplate = LoadImage("images/lowhp.png");
-            _fullhpTemplate = LoadImage("images/fullhp.png");
+            _lowhpTemplate = LoadTemplate("images/lowhp.png");
+            _fullhpTemplate = LoadTemplate("images/fullhp.png");
 
             HealthState = HealthState.None;
 
-            Interval = 5;
+            Interval = 0;
             IntervalVariance = 0;
         }
 
         public override Task DoTick()
         {
-            List<TemplateMatch> isFullHp = FindMatches(0.95f, ConquerControls.HEALTH, _fullhpTemplate);
+            List<Match> isFullHp = FindMatches(0.95f, ConquerControls.HEALTH, _fullhpTemplate);
 
             HealthState newHealthState = HealthState.Unknown;
 
@@ -63,7 +63,7 @@ namespace ConquerButler.Tasks
             }
             else
             {
-                List<TemplateMatch> isLowHp = FindMatches(0.95f, ConquerControls.HEALTH, _lowhpTemplate);
+                List<Match> isLowHp = FindMatches(0.95f, ConquerControls.HEALTH, _lowhpTemplate);
 
                 if (isLowHp.Count > 0)
                 {
@@ -99,9 +99,6 @@ namespace ConquerButler.Tasks
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-
-            _lowhpTemplate.Dispose();
-            _fullhpTemplate.Dispose();
         }
     }
 }

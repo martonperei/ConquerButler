@@ -1,8 +1,10 @@
-﻿using AForge.Imaging;
+﻿using Accord.Extensions.Imaging.Algorithms.LINE2D;
+using AForge.Imaging;
 using log4net;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
+using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
 
 namespace ConquerButler.Tasks
 {
@@ -12,8 +14,8 @@ namespace ConquerButler.Tasks
 
         public static string TASK_TYPE_NAME = "Mining";
 
-        private readonly Bitmap _copperoreTemplate;
-        private readonly Bitmap _ironoreTemplate;
+        private readonly TemplatePyramid _copperoreTemplate;
+        private readonly TemplatePyramid _ironoreTemplate;
 
         public int OreCount { get; protected set; }
 
@@ -22,8 +24,8 @@ namespace ConquerButler.Tasks
         public MiningTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
-            _copperoreTemplate = LoadImage("images/copperore.png");
-            _ironoreTemplate = LoadImage("images/ironore.png");
+            _copperoreTemplate = LoadTemplate("images/copperore.png");
+            _ironoreTemplate = LoadTemplate("images/ironore.png");
 
             Interval = 240;
             IntervalVariance = 60;
@@ -31,7 +33,7 @@ namespace ConquerButler.Tasks
 
         public override async Task DoTick()
         {
-            List<TemplateMatch> matches = FindMatches(0.95f, ConquerControls.INVENTORY, _ironoreTemplate, _copperoreTemplate);
+            List<Match> matches = FindMatches(0.95f, ConquerControls.INVENTORY, _ironoreTemplate, _copperoreTemplate);
 
             OreCount = matches.Count;
 
@@ -39,10 +41,11 @@ namespace ConquerButler.Tasks
 
             for (int i = matches.Count - 1; i >= 0 && i >= matches.Count - 19; i--)
             {
-                TemplateMatch m = matches[i];
+                Match m = matches[i];
 
                 taskList.Add(RequestInputFocus(() =>
                 {
+                    Process.MoveToPoint(MatchToPoint(m));
                     Process.LeftClickOnPoint(MatchToPoint(m));
                     Scheduler.Wait(125);
                     Process.LeftClickOnPoint(new Point(700, 100), 20);
@@ -58,9 +61,6 @@ namespace ConquerButler.Tasks
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-
-            _copperoreTemplate.Dispose();
-            _ironoreTemplate.Dispose();
         }
     }
 }

@@ -1,9 +1,9 @@
-﻿using AForge.Imaging;
+﻿using Accord.Extensions.Imaging.Algorithms.LINE2D;
 using log4net;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
+using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
 
 namespace ConquerButler.Tasks
 {
@@ -13,19 +13,19 @@ namespace ConquerButler.Tasks
 
         public static string TASK_TYPE_NAME = "ItemFind";
 
-        private readonly Bitmap _dropTemplate;
+        private readonly TemplatePyramid _dropTemplate;
 
         public ItemFindPauseTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
             Interval = 10;
 
-            _dropTemplate = LoadImage("images/drop.png");
+            _dropTemplate = LoadTemplate("images/drop.png");
         }
 
         public override Task DoTick()
         {
-            List<TemplateMatch> isDrop = FindMatches(0.95f, ConquerControls.CHAT_AREA, _dropTemplate);
+            List<Match> isDrop = FindMatches(0.95f, ConquerControls.CHAT_AREA, _dropTemplate);
 
             if (isDrop.Count > 0)
             {
@@ -42,8 +42,6 @@ namespace ConquerButler.Tasks
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-
-            _dropTemplate.Dispose();
         }
     }
 }

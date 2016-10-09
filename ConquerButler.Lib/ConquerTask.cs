@@ -1,4 +1,6 @@
-﻿using AForge.Imaging;
+﻿using Accord.Extensions.Imaging.Algorithms.LINE2D;
+using AForge.Imaging;
+using DotImaging;
 using log4net;
 using PropertyChanged;
 using System;
@@ -9,22 +11,24 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Threading;
 using System.Threading.Tasks;
+using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
+using System.Linq;
 
 namespace ConquerButler
 {
-    public class TemplateMatchComparer : IComparer<TemplateMatch>
+    public class MatchComparer : IComparer<Match>
     {
         public const int EPSILON = 10;
 
-        public int Compare(TemplateMatch x, TemplateMatch y)
+        public int Compare(Match x, Match y)
         {
-            int diff = Math.Abs(x.Rectangle.Y - y.Rectangle.Y);
+            int diff = Math.Abs(x.BoundingRect.Y - y.BoundingRect.Y);
 
-            int c = diff < EPSILON ? 0 : x.Rectangle.Y.CompareTo(y.Rectangle.Y);
+            int c = diff < EPSILON ? 0 : x.BoundingRect.Y.CompareTo(y.BoundingRect.Y);
 
             if (c == 0)
             {
-                return x.Rectangle.X.CompareTo(y.Rectangle.X);
+                return x.BoundingRect.X.CompareTo(y.BoundingRect.X);
             }
             else
             {
@@ -37,9 +41,10 @@ namespace ConquerButler
     public abstract class ConquerTask : IDisposable, INotifyPropertyChanged
     {
         private static ILog log = LogManager.GetLogger(typeof(ConquerTask));
-        private static readonly TemplateMatchComparer _templateComparer = new TemplateMatchComparer();
 
         public const int DEFAULT_PRIORITY = 100;
+
+        private static readonly MatchComparer _matchComparer = new MatchComparer();
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -165,51 +170,42 @@ namespace ConquerButler
             return focusAction.TaskCompletion.Task.Result;
         }
 
-        protected Bitmap LoadImage(string fileName)
+        protected TemplatePyramid LoadTemplate(string fileName)
         {
             using (var bmp = new Bitmap(fileName))
             {
-                Bitmap result = bmp.ConvertToFormat(PixelFormat.Format24bppRgb);
-                result.Tag = fileName;
-                return result;
+                Bgr<byte>[,] bgr = bmp.ConvertToFormat(PixelFormat.Format24bppRgb).ToArray() as Bgr<byte>[,];
+
+                return TemplatePyramid.CreatePyramidFromPreparedBWImage(bgr.ToGray(), fileName);
             }
         }
 
-        public List<TemplateMatch> FindMatches(float similiarity, Rectangle sourceRect, params Bitmap[] templates)
+        public List<Match> FindMatches(float similiarity, Rectangle sourceRect, params TemplatePyramid[] templates)
         {
-            using (Bitmap source = Process.Screenshot())
-            {
-                if (source.Width < source.Width || source.Height < sourceRect.Height)
-                {
-                    return new List<TemplateMatch>();
-                }
+            Stopwatch watch = new Stopwatch();
 
-                ExhaustiveTemplateMatching tm = new ExhaustiveTemplateMatching(similiarity);
+            watch.Start();
 
-                List<TemplateMatch> matches = new List<TemplateMatch>();
+            LinearizedMapPyramid source = Process.ScreenshotTemplate;
 
-                Stopwatch watch = new Stopwatch();
+            log.Info($"Process {Process.Id} - task {TaskType} - preparing took {watch.ElapsedMilliseconds}ms");
 
-                foreach (Bitmap template in templates)
-                {
-                    watch.Restart();
+            watch.Restart();
 
-                    TemplateMatch[] match = tm.ProcessImage(source, template, sourceRect);
+            var bestRepresentatives = new List<Match>();
 
-                    log.Info($"Process {Process.Id} - task {TaskType} - {template.Tag} detection took {watch.ElapsedMilliseconds}ms");
+            List<Match> matches = source.MatchTemplates(templates.ToList(), (int)(similiarity * 100), true);
 
-                    matches.AddRange(match);
-                }
+            matches.Sort(_matchComparer);
 
-                matches.Sort(_templateComparer);
+            log.Info($"Process {Process.Id} - task {TaskType} - detection took {watch.ElapsedMilliseconds}ms");
 
-                return matches;
-            }
+            return matches;
         }
 
-        public Point MatchToPoint(TemplateMatch m)
+        public Point MatchToPoint(Match m)
         {
-            return new Point(m.Rectangle.X + m.Rectangle.Width / 2, m.Rectangle.Y + m.Rectangle.Height / 2);
+            return new Point(m.BoundingRect.X + m.BoundingRect.Width / 2, m.BoundingRect.Y + m.BoundingRect.Height / 2);
         }
 
         protected bool Equals(ConquerTask other)

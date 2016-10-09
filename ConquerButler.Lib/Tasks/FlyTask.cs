@@ -1,8 +1,9 @@
-﻿using AForge.Imaging;
+﻿using Accord.Extensions.Imaging.Algorithms.LINE2D;
 using log4net;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
+using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
 
 namespace ConquerButler.Tasks
 {
@@ -12,8 +13,8 @@ namespace ConquerButler.Tasks
 
         public static string TASK_TYPE_NAME = "Fly";
 
-        private readonly Bitmap _xpFlyTemplate;
-        private readonly Bitmap _descendTemplate;
+        private readonly TemplatePyramid _xpFlyTemplate;
+        private readonly TemplatePyramid _descendTemplate;
 
         public FlyTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
@@ -22,8 +23,8 @@ namespace ConquerButler.Tasks
 
             NeedsUserFocus = true;
 
-            _xpFlyTemplate = LoadImage("images/xpfly.png");
-            _descendTemplate = LoadImage("images/descend.png");
+            _xpFlyTemplate = LoadTemplate("images/xpfly.png");
+            _descendTemplate = LoadTemplate("images/descend.png");
         }
 
         public bool IsFlying()
@@ -33,7 +34,7 @@ namespace ConquerButler.Tasks
 
         public async override Task DoTick()
         {
-            List<TemplateMatch> isXpFly = FindMatches(0.95f, ConquerControls.XP_SKILLS, _xpFlyTemplate);
+            List<Match> isXpFly = FindMatches(0.95f, ConquerControls.XP_SKILLS, _xpFlyTemplate);
 
             if (isXpFly.Count > 0)
             {
@@ -57,9 +58,6 @@ namespace ConquerButler.Tasks
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-
-            _xpFlyTemplate.Dispose();
-            _descendTemplate.Dispose();
         }
     }
 }

@@ -87,8 +87,9 @@ namespace ConquerButler
             _random = new Random();
 
             _processWatcher = new ProcessWatcher(CONQUER_PROCESS_NAME);
-            _processWatcher.ProcessStarted += ProcessWatcher_ProcessStarted;
-            _processWatcher.ProcessEnded += ProcessWatcher_ProcessEnded;
+            _processWatcher.ProcessStarted += _processWatcher_ProcessStarted;
+            _processWatcher.ProcessEnded += _processWatcher_ProcessEnded;
+            _processWatcher.ProcessStateChanged += _processWatcher_ProcessStateChanged;
         }
 
         public void Start()
@@ -251,16 +252,32 @@ namespace ConquerButler
             Thread.Sleep(wait + _random.Next(-variance, variance));
         }
 
-        private void ProcessWatcher_ProcessEnded(Process process)
+        private void _processWatcher_ProcessStateChanged(Process process, bool isDisconnected)
         {
+            ConquerProcess conquerProcess = Processes.FirstOrDefault(c => c.InternalProcess.Id == process.Id);
+
+            log.Info($"Process {process.Id} disconnect state changed from {conquerProcess.Disconnected} to {isDisconnected}");
+
+            conquerProcess.Disconnected = isDisconnected;
+        }
+
+        private void _processWatcher_ProcessEnded(Process process)
+        {
+            log.Info($"Process {process.Id} ended");
+
             ConquerProcess conquerProcess = Processes.FirstOrDefault(c => c.InternalProcess.Id == process.Id);
 
             _endedProcesses.Enqueue(conquerProcess);
         }
 
-        private void ProcessWatcher_ProcessStarted(Process process)
+        private void _processWatcher_ProcessStarted(Process process, bool isDisconnected)
         {
-            _startedProcesses.Enqueue(new ConquerProcess(process, this));
+            log.Info($"Process {process.Id} started");
+
+            _startedProcesses.Enqueue(new ConquerProcess(process, this)
+            {
+                Disconnected = isDisconnected
+            });
         }
 
         public void Clear()

@@ -8,12 +8,18 @@ namespace ConquerButler
 {
     public class ProcessWatcher : IDisposable
     {
+        private const string DIALOG_CLASS_NAME = "#32770";
+        private const string DISCONNECTED_TEXT = "Error: Disconnected with game server. Please login the game again!";
+
         public bool IsRunning { get; protected set; }
 
-        public event Action<Process> ProcessStarted;
+        public event Action<Process, bool> ProcessStarted;
         public event Action<Process> ProcessEnded;
 
+        public event Action<Process, bool> ProcessStateChanged;
+
         public readonly HashSet<int> Processes;
+        public readonly HashSet<int> DisconnectedProcesses;
 
         public string ProcessName { get; protected set; }
 
@@ -26,6 +32,7 @@ namespace ConquerButler
         {
             ProcessName = name;
             Processes = new HashSet<int>();
+            DisconnectedProcesses = new HashSet<int>();
         }
 
         public void Start()
@@ -39,6 +46,35 @@ namespace ConquerButler
             _cancellationSource.Cancel();
         }
 
+        private bool IsDisconnected(Process process)
+        {
+            bool isDisconnected = false;
+
+            if (DIALOG_CLASS_NAME.Equals(Helpers.GetClassName(process.MainWindowHandle)))
+            {
+                isDisconnected = DISCONNECTED_TEXT.Equals(Helpers.GetDialogText(process.MainWindowHandle, 0xFFFF));
+            }
+            else
+            {
+                List<IntPtr> childHandles = Helpers.GetAllChildHandles(process);
+
+                foreach (IntPtr handle in childHandles)
+                {
+                    if (DIALOG_CLASS_NAME.Equals(Helpers.GetClassName(handle)))
+                    {
+                        string text = Helpers.GetDialogText(handle, 0xFFFF);
+
+                        if (text != null)
+                        {
+                            isDisconnected = DISCONNECTED_TEXT.Equals(text);
+                        }
+                    }
+                }
+            }
+
+            return isDisconnected;
+        }
+
         public void Main()
         {
             IsRunning = true;
@@ -47,6 +83,8 @@ namespace ConquerButler
             {
                 foreach (Process process in Helpers.GetProcesses(ProcessName))
                 {
+                    bool isDisconnected = IsDisconnected(process);
+
                     if (!Processes.Contains(process.Id))
                     {
                         process.EnableRaisingEvents = true;
@@ -54,7 +92,22 @@ namespace ConquerButler
 
                         Processes.Add(process.Id);
 
-                        ProcessStarted?.Invoke(process);
+                        ProcessStarted?.Invoke(process, isDisconnected);
+                    }
+                    else
+                    {
+                        if (isDisconnected && !DisconnectedProcesses.Contains(process.Id))
+                        {
+                            DisconnectedProcesses.Add(process.Id);
+
+                            ProcessStateChanged?.Invoke(process, isDisconnected);
+                        }
+                        else if (!isDisconnected && DisconnectedProcesses.Contains(process.Id))
+                        {
+                            DisconnectedProcesses.Remove(process.Id);
+
+                            ProcessStateChanged?.Invoke(process, isDisconnected);
+                        }
                     }
                 }
 

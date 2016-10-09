@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ConquerButler.Gui"
         mc:Ignorable="d"
-        Title="Conquer Butler" Icon="chef.ico" Height="700" Width="700"
+        Title="Conquer Butler" Icon="chef.ico" Height="700" Width="680"
         DataContext="{Binding RelativeSource={RelativeSource Mode=Self}}"
         Closed="Window_Closed">
     <Grid Margin="10,10,10,10">
@@ -63,7 +63,38 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <Image Grid.RowSpan="4" Grid.Column="0" Width="220" Source="{Binding Thumbnail}" VerticalAlignment="Top"></Image>
+                        <Image Grid.RowSpan="4" Grid.Column="0" Width="220" Source="{Binding Thumbnail}" VerticalAlignment="Top">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Disconnected}" Value="True">
+                                            <Setter Property="Opacity" Value="0.5"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Disconnected}" Value="False">
+                                            <Setter Property="Opacity" Value="1"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+
+                        <Label Grid.Row="0" Grid.Column="0" Grid.RowSpan="4" HorizontalAlignment="Center" VerticalAlignment="Top"
+                               Content="Disconnected" FontWeight="Bold" FontSize="32">
+                            <Label.Style>
+                                <Style TargetType="Label">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Disconnected}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Disconnected}" Value="False">
+                                            <Setter Property="Visibility" Value="Hidden"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Label.Style>
+                        </Label>
+
                         <Button Grid.Row="3" Grid.Column="0" Width="40" Height="25" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                             Content="Show" Click="ShowProcess_OnClick"/>
 
@@ -79,7 +110,7 @@
 
                         <ListBox x:Name="TaskList"
                                  Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="3" Grid.RowSpan="2"
-                                 Height="120" Width="350"
+                                 Height="120" Width="300"
                                  HorizontalAlignment="Left" VerticalAlignment="Center"
                                  ScrollViewer.CanContentScroll="True"
                                  SelectionMode="Multiple"
@@ -99,7 +130,7 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        
+
                                         <Label Grid.Column="0" HorizontalAlignment="Left" Content="{Binding StateDisplayInfo}"></Label>
                                         <Label Grid.Column="1" HorizontalAlignment="Right" Content="{Binding ResultDisplayInfo}"></Label>
                                     </Grid>

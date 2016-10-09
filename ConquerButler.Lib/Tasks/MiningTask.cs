@@ -44,9 +44,9 @@ namespace ConquerButler.Tasks
                 taskList.Add(RequestInputFocus(() =>
                 {
                     Process.LeftClickOnPoint(MatchToPoint(m));
-                    Scheduler.Wait(250);
-                    Process.LeftClickOnPoint(new Point(700, 100), 40);
-                    Scheduler.Wait(250);
+                    Scheduler.Wait(125);
+                    Process.LeftClickOnPoint(new Point(700, 100), 20);
+                    Scheduler.Wait(125);
 
                     OreCount--;
                 }, i));

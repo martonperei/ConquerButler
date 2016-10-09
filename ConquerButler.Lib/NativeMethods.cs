@@ -155,15 +155,39 @@ namespace ConquerButler
         }
     }
 
+    internal delegate bool EnumWindowProc(IntPtr hwnd, IntPtr lParam);
+
+    internal delegate bool EnumThreadDelegate(IntPtr hWnd, IntPtr lParam);
+
     internal class NativeMethods
     {
         [DllImport("gdi32.dll")]
         internal static extern bool DeleteObject(IntPtr hObject);
 
+        [DllImport("user32")]
+        internal static extern int IsWindowEnabled(IntPtr hWnd);
+
+        [DllImport("user32")]
+        internal static extern bool IsWindowVisible(IntPtr hWnd);
+
+        [DllImport("user32")]
+        internal static extern bool IsZoomed(IntPtr hWnd);
+
+        [DllImport("user32")]
+        internal static extern bool IsIconic(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        internal static extern IntPtr GetWindow(IntPtr hWnd, int cmd);
+
         [DllImport("user32.dll")]
         internal static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
         [DllImport("user32.dll")]
+        internal static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
+        [DllImport("user32.dll")]
         internal static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, int nFlags);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        internal static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
         internal const uint SW_RESTORE = 0x09;
         [DllImport("user32.dll")]
@@ -174,11 +198,35 @@ namespace ConquerButler
         [DllImport("user32.dll")]
         internal static extern IntPtr GetForegroundWindow();
 
+        [DllImport("user32.dll")]
+        internal static extern bool EnumThreadWindows(int dwThreadId, EnumThreadDelegate lpfn, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        internal static extern bool EnumChildWindows(IntPtr window, EnumWindowProc callback, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        internal static extern bool IsHungAppWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        internal static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, bool bErase);
+
+        [DllImport("user32.dll")]
+        internal static extern bool UpdateWindow(IntPtr hWnd);
+
         [DllImport("gdi32.dll")]
         internal static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
 
         [DllImport("user32.dll")]
         internal static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+
+        [DllImport("user32.dll")]
+        internal static extern int GetDlgItemText(IntPtr hWnd, int item, StringBuilder text, int count);
+
+        [DllImport("user32.dll")]
+        internal static extern IntPtr GetDlgItem(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
         [DllImport("SHCore.dll", SetLastError = true)]
         internal static extern bool SetProcessDpiAwareness(PROCESS_DPI_AWARENESS awareness);

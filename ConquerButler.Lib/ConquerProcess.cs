@@ -20,12 +20,29 @@ namespace ConquerButler
         public int Id { get; protected set; }
         public ConquerScheduler Scheduler { get; protected set; }
         public Process InternalProcess { get; protected set; }
+
+        private bool _isDisconnected;
+        public bool Disconnected
+        {
+            get { return _isDisconnected; }
+            set
+            {
+                if (_isDisconnected != value)
+                {
+                    ProcessStateChange?.Invoke(value);
+                }
+
+                _isDisconnected = value;
+            }
+        }
+
         public bool Invalid { get; protected set; }
         public Point MousePosition { get; set; }
         public InputSimulator Simulator { get; protected set; }
 
         public ObservableCollection<ConquerTask> Tasks { get; set; }
 
+        public event Action<bool> ProcessStateChange;
         public event PropertyChangedEventHandler PropertyChanged;
 
         private readonly ConcurrentQueue<ConquerTask> _addedTasks;
@@ -110,7 +127,10 @@ namespace ConquerButler
 
             foreach (ConquerTask task in Tasks)
             {
-                task.Tick(dt);
+                if (!task.NeedsToBeConnected || (!Disconnected && task.NeedsToBeConnected))
+                {
+                    task.Tick(dt);
+                }
             }
         }
 
@@ -167,13 +187,23 @@ namespace ConquerButler
 
         public void LeftClickOnPoint(Point p, int variation = 5)
         {
+            p.X = p.X + _random.Next(-variation, variation);
+            p.Y = p.Y + _random.Next(-variation, variation);
+
             Helpers.ClientToVirtualScreen(InternalProcess, ref p);
 
-            float x = p.X + _random.Next(-variation, variation);
-            float y = p.Y + _random.Next(-variation, variation);
-
-            Simulator.Mouse.MoveMouseTo(x, y);
+            Simulator.Mouse.MoveMouseTo(p.X, p.Y);
             Simulator.Mouse.LeftButtonClick();
+        }
+
+        public void MoveToPoint(Point p, int variation = 5)
+        {
+            p.X = p.X + _random.Next(-variation, variation);
+            p.Y = p.Y + _random.Next(-variation, variation);
+
+            Helpers.ClientToVirtualScreen(InternalProcess, ref p);
+
+            Simulator.Mouse.MoveMouseTo(p.X, p.Y);
         }
 
         public void Dispose()

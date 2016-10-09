@@ -57,6 +57,7 @@ namespace ConquerButler
         public bool IsRunning { get; protected set; } = false;
         public bool IsPaused { get; protected set; } = true;
         public bool NeedsUserFocus { get; protected set; } = false;
+        public bool NeedsToBeConnected { get; protected set; } = true;
 
         public string TaskType { get; protected set; }
 

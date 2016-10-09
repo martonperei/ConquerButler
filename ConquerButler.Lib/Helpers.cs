@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
@@ -108,11 +109,35 @@ namespace ConquerButler
         public static string GetWindowTitle(IntPtr handle)
         {
             const int nChars = 256;
-            StringBuilder Buff = new StringBuilder(nChars);
+            StringBuilder buffer = new StringBuilder(nChars);
 
-            if (NativeMethods.GetWindowText(handle, Buff, nChars) > 0)
+            if (NativeMethods.GetWindowText(handle, buffer, nChars) > 0)
             {
-                return Buff.ToString();
+                return buffer.ToString();
+            }
+            return null;
+        }
+
+        public static string GetDialogText(IntPtr handle, int item)
+        {
+            const int nChars = 256;
+            StringBuilder buffer = new StringBuilder(nChars);
+
+            if (NativeMethods.GetDlgItemText(handle, item, buffer, nChars) > 0)
+            {
+                return buffer.ToString();
+            }
+            return null;
+        }
+
+        public static string GetClassName(IntPtr handle)
+        {
+            const int nChars = 256;
+            StringBuilder buffer = new StringBuilder(nChars);
+
+            if (NativeMethods.GetClassName(handle, buffer, nChars) > 0)
+            {
+                return buffer.ToString();
             }
             return null;
         }
@@ -130,9 +155,49 @@ namespace ConquerButler
             return null;
         }
 
+
+
+        public static IEnumerable<Process> GetProcessesByTitle(string title)
+        {
+            return Process.GetProcesses().Where(process => process.ProcessName.StartsWith(title));
+        }
+
         public static IEnumerable<Process> GetProcesses(string processName)
         {
             return Process.GetProcesses().Where(process => process.ProcessName.StartsWith(processName));
+        }
+
+        public static List<IntPtr> GetAllChildHandles(IntPtr handle)
+        {
+            List<IntPtr> childHandles = new List<IntPtr>();
+
+            EnumWindowProc childProc = new EnumWindowProc((hWnd, lParam) =>
+            {
+                childHandles.Add(hWnd);
+
+                return true;
+            });
+
+            NativeMethods.EnumChildWindows(handle, childProc, IntPtr.Zero);
+
+            return childHandles;
+        }
+
+        public static List<IntPtr> GetAllChildHandles(Process process)
+        {
+            var handles = new List<IntPtr>();
+
+            foreach (ProcessThread thread in process.Threads)
+            {
+                NativeMethods.EnumThreadWindows(thread.Id, (hWnd, lParam) =>
+                {
+                    handles.Add(hWnd);
+                    return true;
+                },
+                IntPtr.Zero);
+            }
+
+            return handles;
         }
 
         public static Bitmap CropBitmap(Bitmap bitmap, Rectangle tr)
@@ -159,7 +224,6 @@ namespace ConquerButler
                 return null;
             }
 
-
             Bitmap bmp = new Bitmap(rc.Width, rc.Height, PixelFormat.Format24bppRgb);
 
             using (Graphics gfxBmp = Graphics.FromImage(bmp))
@@ -174,6 +238,9 @@ namespace ConquerButler
                     gfxBmp.ReleaseHdc(hdcBitmap);
                 }
             }
+
+            NativeMethods.InvalidateRect(process.MainWindowHandle, IntPtr.Zero, true);
+            //NativeMethods.UpdateWindow(process.MainWindowHandle);
 
             return bmp;
         }

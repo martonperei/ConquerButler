@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Windows;
@@ -66,6 +67,8 @@ namespace ConquerButler.Gui
     {
         public bool IsSelected { get; set; }
 
+        public bool Disconnected { get; set; }
+
         public ConquerProcess ConquerProcess { get; set; }
 
         public ObservableCollection<ConquerTaskModel> Tasks { get; set; } = new ObservableCollection<ConquerTaskModel>();
@@ -125,7 +128,16 @@ namespace ConquerButler.Gui
 
             process.Tasks.CollectionChanged += Tasks_CollectionChanged;
 
+            Disconnected = process.Disconnected;
+
+            process.ProcessStateChange += Process_ProcessStateChange;
+
             Refresh();
+        }
+
+        private void Process_ProcessStateChange(bool isDisconnected)
+        {
+            Application.Current.Dispatcher.Invoke(() => Disconnected = isDisconnected);
         }
 
         private void Tasks_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -154,7 +166,7 @@ namespace ConquerButler.Gui
         {
             Screenshot?.Dispose();
 
-            Screenshot = Helpers.PrintWindow(ConquerProcess.InternalProcess);
+            Screenshot = ConquerProcess.Screenshot();
         }
     }
 
@@ -198,7 +210,7 @@ namespace ConquerButler.Gui
                     process.Refresh();
                 }
             };
-            updateScreenshot.Interval = new TimeSpan(0, 0, 0, 10);
+            updateScreenshot.Interval = new TimeSpan(0, 0, 0, 30);
             updateScreenshot.Start();
 
             log.Info("Initialized Window");

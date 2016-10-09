@@ -1,16 +1,25 @@
 ﻿using AForge.Imaging;
 using log4net;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace ConquerButler.Tasks
 {
     public enum HealthState
     {
-        Unknown,
         Low,
-        Full
+        Full,
+        Unknown,
+        None
+    }
+
+    public enum HealthChangeAction
+    {
+        Exit,
+        Notify
     }
 
     public class HealthWatcherTask : ConquerTask
@@ -24,6 +33,10 @@ namespace ConquerButler.Tasks
 
         public HealthState HealthState { get; protected set; }
 
+        public event Action<HealthState, HealthState> HealthChanged;
+
+        public HealthChangeAction OnHealthLow { get; set; } = HealthChangeAction.Notify;
+
         public override string ResultDisplayInfo { get { return $"{HealthState}"; } }
 
         public HealthWatcherTask(ConquerProcess process)
@@ -32,7 +45,7 @@ namespace ConquerButler.Tasks
             _lowhpTemplate = LoadImage("images/lowhp.png");
             _fullhpTemplate = LoadImage("images/fullhp.png");
 
-            HealthState = HealthState.Unknown;
+            HealthState = HealthState.None;
 
             Interval = 5;
             IntervalVariance = 0;
@@ -42,9 +55,11 @@ namespace ConquerButler.Tasks
         {
             List<TemplateMatch> isFullHp = FindMatches(0.95f, ConquerControls.HEALTH, _fullhpTemplate);
 
+            HealthState newHealthState = HealthState.Unknown;
+
             if (isFullHp.Count > 0)
             {
-                HealthState = HealthState.Full;
+                newHealthState = HealthState.Full;
             }
             else
             {
@@ -52,19 +67,30 @@ namespace ConquerButler.Tasks
 
                 if (isLowHp.Count > 0)
                 {
-                    if (HealthState == HealthState.Full)
-                    {
-                        Process.InternalProcess.CloseMainWindow();
-                    }
-                    else
-                    {
-                        HealthState = HealthState.Low;
-                    }
+                    newHealthState = HealthState.Low;
                 }
-                else
+            }
+
+            if (!HealthState.Equals(newHealthState))
+            {
+                log.Info($"Process {Process.Id} - task {TaskType} - Health changed from {HealthState} to {newHealthState}");
+
+                if (newHealthState == HealthState.Unknown || newHealthState == HealthState.Low)
                 {
-                    HealthState = HealthState.Unknown;
+                    switch (OnHealthLow)
+                    {
+                        case HealthChangeAction.Exit:
+                            Process.InternalProcess.CloseMainWindow();
+                            break;
+                        case HealthChangeAction.Notify:
+                            MessageBox.Show($"Process {Process.Id} - task {TaskType} - Health changed from {HealthState} to {newHealthState}");
+                            break;
+                    }
                 }
+
+                HealthChanged?.Invoke(HealthState, newHealthState);
+
+                HealthState = newHealthState;
             }
 
             return Task.FromResult(true);

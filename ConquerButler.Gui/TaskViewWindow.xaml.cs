@@ -47,7 +47,7 @@ namespace ConquerButler.Gui
         {
             get
             {
-                return SelectedTaskType.Content.Model;
+                return SelectedTaskType?.Content?.Model;
             }
         }
     }

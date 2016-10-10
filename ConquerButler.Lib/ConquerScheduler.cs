@@ -51,7 +51,13 @@ namespace ConquerButler
 
         public ObservableCollection<ConquerProcess> Processes { get; set; }
 
-        public bool IsRunning { get; protected set; }
+        public bool IsRunning
+        {
+            get
+            {
+                return _cancellationTokenSource != null && !_cancellationTokenSource.IsCancellationRequested;
+            }
+        }
 
         public double TargetElapsedTime { get; protected set; }
         public Clock Clock { get; protected set; }
@@ -90,13 +96,11 @@ namespace ConquerButler
             _processWatcher.ProcessStarted += _processWatcher_ProcessStarted;
             _processWatcher.ProcessEnded += _processWatcher_ProcessEnded;
             _processWatcher.ProcessStateChanged += _processWatcher_ProcessStateChanged;
-
-            _cancellationTokenSource = new CancellationTokenSource();
         }
 
         public void Start()
         {
-            IsRunning = true;
+            _cancellationTokenSource = new CancellationTokenSource();
 
             Clock.Start();
 
@@ -104,17 +108,36 @@ namespace ConquerButler
 
             _processWatcher.Start();
 
-            _tickTask = Task.Factory.StartNew(TickLoop, _cancellationTokenSource.Token);
-            _actionTask = Task.Factory.StartNew(ActionLoop, _cancellationTokenSource.Token);
+            _tickTask = Task.Factory.StartNew(TickLoop, _cancellationTokenSource.Token).ContinueWith(task =>
+            {
+                if (!task.IsCanceled && task.IsFaulted)
+                {
+                    log.Error("Tick task exception", task.Exception);
+                }
+                else
+                {
+                    log.Info("Tick task ended");
+                }
+            });
+            _actionTask = Task.Factory.StartNew(ActionLoop, _cancellationTokenSource.Token).ContinueWith(task =>
+            {
+                if (!task.IsCanceled && task.IsFaulted)
+                {
+                    log.Error("Action task exception", task.Exception);
+                } else
+                {
+                    log.Info("Action task ended");
+                }
+            });
         }
 
         public void Stop()
         {
-            IsRunning = false;
-
             _cancellationTokenSource.Cancel();
 
             _processWatcher.Stop();
+
+            log.Info("Scheduler stopped");
         }
 
         protected void FixedTick(double dt)
@@ -163,10 +186,8 @@ namespace ConquerButler
 
         private void TickLoop()
         {
-            while (IsRunning)
+            while (!_cancellationTokenSource.IsCancellationRequested)
             {
-                _cancellationTokenSource.Token.ThrowIfCancellationRequested();
-
                 _frameTime = Clock.Frame();
 
                 if (_frameTime > 0.25f) _frameTime = 0.25f;
@@ -190,10 +211,8 @@ namespace ConquerButler
 
         private void ActionLoop()
         {
-            while (IsRunning)
+            while (!_cancellationTokenSource.IsCancellationRequested)
             {
-                _cancellationTokenSource.Token.ThrowIfCancellationRequested();
-
                 ConquerAction action = _actions.Take(_cancellationTokenSource.Token);
 
                 if (action.Task.Enabled)
@@ -242,6 +261,8 @@ namespace ConquerButler
 
         public void CancelRunning()
         {
+            log.Info("Scheduler cancelling running taks...");
+
             foreach (ConquerProcess process in Processes)
             {
                 process.Cancel();
@@ -286,10 +307,6 @@ namespace ConquerButler
             {
                 Disconnected = isDisconnected
             });
-        }
-
-        public void Clear()
-        {
         }
 
         public void Dispose()

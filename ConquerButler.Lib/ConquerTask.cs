@@ -113,14 +113,6 @@ namespace ConquerButler
                         try
                         {
                             await DoTick();
-
-                            log.Info($"Process {Process.Id} - task {TaskType} finished - {ResultDisplayInfo}");
-                        }
-                        catch (Exception e)
-                        {
-                            log.Error($"Process {Process.Id} - task {TaskType} exception", e);
-
-                            throw e;
                         }
                         finally
                         {
@@ -128,7 +120,17 @@ namespace ConquerButler
 
                             IsRunning = false;
                         }
-                    }, CancellationToken.Token);
+                    }, CancellationToken.Token).ContinueWith(task =>
+                    {
+                        if (!task.IsCanceled && task.IsFaulted)
+                        {
+                            log.Error($"Process {Process.Id} - task {TaskType} exception", task.Exception);
+                        }
+                        else
+                        {
+                            log.Info($"Process {Process.Id} - task {TaskType} finished - {ResultDisplayInfo}");
+                        }
+                    });
                 }
                 else
                 {
@@ -145,16 +147,22 @@ namespace ConquerButler
             {
                 NextRun = 0;
             }
+
+            log.Info($"Process {Process.Id} - task {TaskType} force ran");
         }
 
         public void Pause()
         {
             IsPaused = true;
+
+            log.Info($"Process {Process.Id} - task {TaskType} paused");
         }
 
         public void Resume()
         {
             IsPaused = false;
+
+            log.Info($"Process {Process.Id} - task {TaskType} resumed");
         }
 
         public void Cancel()
@@ -166,6 +174,8 @@ namespace ConquerButler
             Enabled = false;
 
             CancellationToken?.Cancel();
+
+            log.Info($"Process {Process.Id} - task {TaskType} canceled");
         }
 
         public Task RequestInputFocus(Action action, int priority)

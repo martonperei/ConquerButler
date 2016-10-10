@@ -70,11 +70,15 @@ namespace ConquerButler
             {
                 _addedTasks.Enqueue(task);
             }
+
+            log.Info($"Process {InternalProcess.Id} - task {task.TaskType} added");
         }
 
         public void RemoveTask(ConquerTask task)
         {
             _removedTasks.Enqueue(task);
+
+            log.Info($"Process {InternalProcess.Id} - task {task.TaskType} removed");
         }
 
         public void PauseTask<T>()
@@ -139,6 +143,8 @@ namespace ConquerButler
             {
                 task.Cancel();
             }
+
+            log.Info($"Process {InternalProcess.Id} - invalidated");
         }
 
         public void Pause()
@@ -192,6 +198,8 @@ namespace ConquerButler
 
         public void RightClick(Point p, int variation = 5)
         {
+            log.Debug($"Process {InternalProcess.Id} - RightClick {p.X}-{p.Y}");
+
             TranslateToVirtualScreen(ref p, variation);
 
             Simulator.Mouse.MoveMouseTo(p.X, p.Y);
@@ -200,6 +208,8 @@ namespace ConquerButler
 
         public void LeftClick(Point p, int variation = 5)
         {
+            log.Debug($"Process {InternalProcess.Id} - LeftClick {p.X}-{p.Y}");
+
             TranslateToVirtualScreen(ref p, variation);
 
             Simulator.Mouse.MoveMouseTo(p.X, p.Y);
@@ -208,6 +218,8 @@ namespace ConquerButler
 
         public void MoveTo(Point p, int variation = 5)
         {
+            log.Debug($"Process {InternalProcess.Id} - MoveTo {p.X}-{p.Y}");
+
             TranslateToVirtualScreen(ref p, variation);
 
             Simulator.Mouse.MoveMouseTo(p.X, p.Y);

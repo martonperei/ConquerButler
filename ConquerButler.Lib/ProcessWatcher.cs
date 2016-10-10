@@ -1,4 +1,5 @@
-﻿using System;
+﻿using log4net;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
@@ -8,10 +9,18 @@ namespace ConquerButler
 {
     public class ProcessWatcher : IDisposable
     {
+        private static ILog log = LogManager.GetLogger(typeof(ProcessWatcher));
+
         private const string DIALOG_CLASS_NAME = "#32770";
         private const string DISCONNECTED_TEXT = "Error: Disconnected with game server. Please login the game again!";
 
-        public bool IsRunning { get; protected set; }
+        public bool IsRunning
+        {
+            get
+            {
+                return _cancellationSource != null && !_cancellationSource.IsCancellationRequested;
+            }
+        }
 
         public event Action<Process, bool> ProcessStarted;
         public event Action<Process> ProcessEnded;
@@ -38,12 +47,26 @@ namespace ConquerButler
         public void Start()
         {
             _cancellationSource = new CancellationTokenSource();
-            _watcherTask = Task.Factory.StartNew(Main, _cancellationSource.Token);
+            _watcherTask = Task.Factory.StartNew(Main, _cancellationSource.Token).ContinueWith(task =>
+            {
+                if (!task.IsCanceled && task.IsFaulted)
+                {
+                    log.Error("Process watcher task exception", task.Exception);
+                }
+                else
+                {
+                    log.Info("Process watcher task ended");
+                }
+            });
+
+            log.Info("ProcessWatcher started");
         }
 
         public void Stop()
         {
             _cancellationSource.Cancel();
+
+            log.Info("ProcessWatcher stopped");
         }
 
         private bool IsDisconnected(Process process)
@@ -77,8 +100,6 @@ namespace ConquerButler
 
         public void Main()
         {
-            IsRunning = true;
-
             while (!_cancellationSource.IsCancellationRequested)
             {
                 foreach (Process process in Helpers.GetProcesses(ProcessName))
@@ -87,6 +108,8 @@ namespace ConquerButler
 
                     if (!Processes.Contains(process.Id))
                     {
+                        log.Info($"Process {process.Id} started");
+
                         process.EnableRaisingEvents = true;
                         process.Exited += Process_Exited;
 
@@ -98,12 +121,16 @@ namespace ConquerButler
                     {
                         if (isDisconnected && !DisconnectedProcesses.Contains(process.Id))
                         {
+                            log.Info($"Process {process.Id} disconnected");
+
                             DisconnectedProcesses.Add(process.Id);
 
                             ProcessStateChanged?.Invoke(process, isDisconnected);
                         }
                         else if (!isDisconnected && DisconnectedProcesses.Contains(process.Id))
                         {
+                            log.Info($"Process {process.Id} reconnected");
+
                             DisconnectedProcesses.Remove(process.Id);
 
                             ProcessStateChanged?.Invoke(process, isDisconnected);
@@ -113,13 +140,13 @@ namespace ConquerButler
 
                 Thread.Sleep(CheckInterval);
             }
-
-            IsRunning = false;
         }
 
         private void Process_Exited(object sender, EventArgs e)
         {
             Process process = (Process)sender;
+
+            log.Info($"Process {process.Id} exited");
 
             Processes.Remove(process.Id);
 

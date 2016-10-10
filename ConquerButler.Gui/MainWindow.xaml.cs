@@ -44,18 +44,15 @@ namespace ConquerButler.Gui
         {
             ConquerTask = task;
 
+            string[] events = new string[] { "IsRunning", "NextRun", "ResultDisplayInfo" };
+
             Observable.FromEventPattern<PropertyChangedEventArgs>(ConquerTask, "PropertyChanged")
-                .Where((e) => e.EventArgs.PropertyName.Equals("IsRunning") ||
-                e.EventArgs.PropertyName.Equals("NextRun") ||
-                e.EventArgs.PropertyName.Equals("ResultDisplayInfo"))
-                .Buffer(TimeSpan.FromSeconds(0.1))
+                .Where((e) => events.Contains(e.EventArgs.PropertyName))
+                .Sample(TimeSpan.FromSeconds(0.1))
                 .Subscribe(e =>
                 {
-                    if (e.Count > 0)
-                    {
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("StateDisplayInfo"));
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ResultDisplayInfo"));
-                    }
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("StateDisplayInfo"));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ResultDisplayInfo"));
                 });
         }
     }
@@ -70,14 +67,6 @@ namespace ConquerButler.Gui
         public ConquerProcess ConquerProcess { get; set; }
 
         public ObservableCollection<ConquerTaskModel> Tasks { get; set; } = new ObservableCollection<ConquerTaskModel>();
-
-        public System.Drawing.Point MousePosition
-        {
-            get
-            {
-                return ConquerProcess.MousePosition;
-            }
-        }
 
         public Bitmap Screenshot { get; set; }
 
@@ -114,17 +103,6 @@ namespace ConquerButler.Gui
         public ConquerProcessModel(ConquerProcess process)
         {
             ConquerProcess = process;
-
-            Observable.FromEventPattern<PropertyChangedEventArgs>(ConquerProcess, "PropertyChanged")
-                .Where((e) => e.EventArgs.PropertyName.Equals("MousePosition"))
-                .Buffer(TimeSpan.FromSeconds(0.1))
-                .Subscribe(e =>
-                {
-                    if (e.Count > 0)
-                    {
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(e.First().EventArgs.PropertyName));
-                    }
-                });
 
             process.Tasks.CollectionChanged += Tasks_CollectionChanged;
 

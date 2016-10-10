@@ -39,6 +39,8 @@ namespace ConquerButler.Tasks
 
             OreCount = matches.Count;
 
+            log.Info($"Found {OreCount} ores...");
+
             List<Task> taskList = new List<Task>();
 
             for (int i = matches.Count - 1; i >= 0 && i >= matches.Count - 19; i--)
@@ -52,10 +54,16 @@ namespace ConquerButler.Tasks
                     Process.LeftClick(DROP_POINT, 20);
                     Scheduler.Wait(250);
 
+
                     OreCount--;
                     TotalOresDropped++;
                 }, i));
             }
+
+            taskList.Add(RequestInputFocus(() =>
+            {
+                Process.RightClick(DROP_POINT, 20);
+            }, 0));
 
             await Task.WhenAll(taskList);
         }

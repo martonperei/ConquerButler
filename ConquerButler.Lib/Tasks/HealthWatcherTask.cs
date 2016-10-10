@@ -35,7 +35,7 @@ namespace ConquerButler.Tasks
 
         public event Action<HealthState, HealthState> HealthChanged;
 
-        public HealthChangeAction OnHealthLow { get; set; } = HealthChangeAction.Notify;
+        public HealthChangeAction OnHealthLow { get; set; } = HealthChangeAction.Exit;
 
         public override string ResultDisplayInfo { get { return $"{HealthState}"; } }
 

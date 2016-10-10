@@ -6,6 +6,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace ConquerButler
 {
@@ -71,11 +72,6 @@ namespace ConquerButler
             p.Y = p.Y * 65535 / screenBounds.Height;
         }
 
-        public static bool IsInFocus(Process process)
-        {
-            return IsForegroundWindow(process) && IsCursorInsideWindow(GetCursorPosition(process), process);
-        }
-
         public static bool IsForegroundWindow(Process process)
         {
             return NativeMethods.GetForegroundWindow() == process.MainWindowHandle;
@@ -96,6 +92,8 @@ namespace ConquerButler
                 {
                     return false;
                 }
+
+                Thread.SpinWait(1);
             }
 
             return true;

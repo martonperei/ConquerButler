@@ -94,7 +94,8 @@ namespace ConquerButler
 
         public void Tick(double dt)
         {
-            if (Enabled && !IsRunning && !IsPaused)
+            if (!NeedsToBeConnected || (!Process.Disconnected && NeedsToBeConnected) &&
+                Enabled && !IsRunning && !IsPaused)
             {
                 if (NextRun <= 0)
                 {
@@ -161,7 +162,7 @@ namespace ConquerButler
         {
             CancellationToken.Token.ThrowIfCancellationRequested();
 
-            var focusAction = Scheduler.RequestInputFocus(this, action, priority, !NeedsUserFocus);
+            var focusAction = Scheduler.RequestInputFocus(this, action, priority);
 
             return focusAction.TaskCompletion.Task;
         }

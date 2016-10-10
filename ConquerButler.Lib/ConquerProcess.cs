@@ -127,10 +127,7 @@ namespace ConquerButler
 
             foreach (ConquerTask task in Tasks)
             {
-                if (!task.NeedsToBeConnected || (!Disconnected && task.NeedsToBeConnected))
-                {
-                    task.Tick(dt);
-                }
+                task.Tick(dt);
             }
         }
 

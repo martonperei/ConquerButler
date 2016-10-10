@@ -36,6 +36,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>chef.ico</ApplicationIcon>
@@ -249,6 +250,8 @@
     <Resource Include="chef.ico" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="costura32\SIMDArrayInstructions.dll" />
+    <EmbeddedResource Include="costura64\SIMDArrayInstructions.dll" />
     <Content Include="images\drop.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -297,17 +300,22 @@
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\packages\Fody.1.29.2\build\dotnet\Fody.targets" Condition="Exists('..\packages\Fody.1.29.2\build\dotnet\Fody.targets')" />
+  <Target AfterTargets="AfterBuild;NonWinFodyTarget" Name="CleanReferenceCopyLocalPaths">
+    <Delete Files="@(ReferenceCopyLocalPaths->'$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)')" />
+  </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Fody.1.29.2\build\dotnet\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.1.29.2\build\dotnet\Fody.targets'))" />
     <Error Condition="!Exists('..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets'))" />
     <Error Condition="!Exists('..\packages\Accord.3.3.0\build\Accord.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.3.3.0\build\Accord.targets'))" />
+    <Error Condition="!Exists('..\packages\Costura.Fody.2.0.0-beta0018\build\Costura.Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.2.0.0-beta0018\build\Costura.Fody.targets'))" />
+    <Error Condition="!Exists('..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.1.29.4\build\dotnet\Fody.targets'))" />
   </Target>
   <Import Project="..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets" Condition="Exists('..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets')" />
   <Import Project="..\packages\Accord.3.3.0\build\Accord.targets" Condition="Exists('..\packages\Accord.3.3.0\build\Accord.targets')" />
+  <Import Project="..\packages\Costura.Fody.2.0.0-beta0018\build\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.2.0.0-beta0018\build\Costura.Fody.targets')" />
+  <Import Project="..\packages\Fody.1.29.4\build\dotnet\Fody.targets" Condition="Exists('..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

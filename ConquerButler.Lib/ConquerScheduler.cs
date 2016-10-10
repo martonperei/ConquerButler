@@ -242,16 +242,16 @@ namespace ConquerButler
 
         public void CancelRunning()
         {
+            foreach (ConquerProcess process in Processes)
+            {
+                process.Cancel();
+            }
+
             while (_actions.Count > 0)
             {
                 ConquerAction action = _actions.Take();
 
                 action.TaskCompletion.SetCanceled();
-            }
-
-            foreach (ConquerProcess process in Processes)
-            {
-                process.Cancel();
             }
         }
 

@@ -5,11 +5,11 @@ using System.Windows.Controls;
 namespace ConquerButler.Gui.Tasks
 {
     [ImplementPropertyChanged]
-    public class CustomTaskViewModel
+    public class CustomTaskViewModel : ConquerTaskViewModel
     {
     }
 
-    public partial class CustomTaskView : UserControl, ConquerTaskFactory
+    public partial class CustomTaskView : UserControl, ConquerTaskViewBase<CustomTaskViewModel>
     {
         public CustomTaskViewModel Model { get; set; } = new CustomTaskViewModel();
 
@@ -20,7 +20,14 @@ namespace ConquerButler.Gui.Tasks
 
         public ConquerTask CreateTask(ConquerProcess process)
         {
-            return new CustomTask(process);
+            var task = new CustomTask(process);
+
+            task.Interval = Model.Interval;
+            task.Priority = Model.Priority;
+            task.NeedsUserFocus = Model.NeedsUserFocus;
+            task.NeedsToBeConnected = Model.NeedsToBeConnected;
+
+            return task;
         }
     }
 }

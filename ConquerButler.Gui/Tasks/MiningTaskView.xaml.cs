@@ -5,13 +5,16 @@ using System.Windows.Controls;
 namespace ConquerButler.Gui.Tasks
 {
     [ImplementPropertyChanged]
-    public class MiningTaskViewModel
+    public class MiningTaskViewModel : ConquerTaskViewModel
     {
     }
 
-    public partial class MiningTaskView : UserControl, ConquerTaskFactory
+    public partial class MiningTaskView : UserControl, ConquerTaskViewBase<MiningTaskViewModel>
     {
-        public MiningTaskViewModel Model { get; set; } = new MiningTaskViewModel();
+        public MiningTaskViewModel Model { get; set; } = new MiningTaskViewModel()
+        {
+            Interval = 60
+        };
 
         public MiningTaskView()
         {
@@ -20,7 +23,14 @@ namespace ConquerButler.Gui.Tasks
 
         public ConquerTask CreateTask(ConquerProcess process)
         {
-            return new MiningTask(process);
+            var task = new MiningTask(process);
+
+            task.Interval = Model.Interval;
+            task.Priority = Model.Priority;
+            task.NeedsUserFocus = Model.NeedsUserFocus;
+            task.NeedsToBeConnected = Model.NeedsToBeConnected;
+
+            return task;
         }
     }
 }

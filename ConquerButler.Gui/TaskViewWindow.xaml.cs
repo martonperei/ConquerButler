@@ -17,7 +17,7 @@ namespace ConquerButler.Gui
 
         public bool IsSelected { get; set; }
 
-        public UserControl Content { get; set; }
+        public ConquerTaskViewBase<ConquerTaskViewModel> Content { get; set; }
 
         private ConquerTaskFactoryFunc _factory;
 
@@ -25,7 +25,7 @@ namespace ConquerButler.Gui
         {
             get
             {
-                return _factory ?? (Content as ConquerTaskFactory).CreateTask;
+                return _factory ?? (Content as ConquerTaskViewBase<ConquerTaskViewModel>).CreateTask;
             }
             set
             {
@@ -42,6 +42,14 @@ namespace ConquerButler.Gui
         public List<TaskTypeModel> TaskTypes { get; set; } = new List<TaskTypeModel>();
 
         public TaskTypeModel SelectedTaskType { get; set; }
+
+        public ConquerTaskViewModel TaskViewModel
+        {
+            get
+            {
+                return SelectedTaskType.Content.Model;
+            }
+        }
     }
 
     public partial class TaskViewWindow : Window

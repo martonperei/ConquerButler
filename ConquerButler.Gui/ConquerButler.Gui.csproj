@@ -150,6 +150,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Tasks\ConquerTaskViewModel.cs" />
     <Compile Include="Tasks\CustomTaskView.xaml.cs">
       <DependentUpon>CustomTaskView.xaml</DependentUpon>
     </Compile>

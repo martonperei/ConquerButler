@@ -244,6 +244,19 @@ namespace ConquerButler.Gui
             });
         }
 
+        private void ForceRunTasks_OnClick(object sender, RoutedEventArgs e)
+        {
+            IEnumerable<ConquerProcessModel> processes = Model.Processes.Where(p => p.IsSelected);
+
+            foreach (ConquerProcessModel process in processes)
+            {
+                foreach (ConquerTaskModel task in process.Tasks)
+                {
+                    task.ConquerTask.ForceRun();
+                }
+            }
+        }
+
         private void ResumeTasks_OnClick(object sender, RoutedEventArgs e)
         {
             IEnumerable<ConquerProcessModel> processes = Model.Processes.Where(p => p.IsSelected);

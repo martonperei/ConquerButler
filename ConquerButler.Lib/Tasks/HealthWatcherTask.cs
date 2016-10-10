@@ -35,7 +35,7 @@ namespace ConquerButler.Tasks
 
         public event Action<HealthState, HealthState> HealthChanged;
 
-        public HealthChangeAction OnHealthLow { get; set; } = HealthChangeAction.Exit;
+        public HealthChangeAction HealthChangeAction { get; set; } = HealthChangeAction.Exit;
 
         public override string ResultDisplayInfo { get { return $"{HealthState}"; } }
 
@@ -77,7 +77,7 @@ namespace ConquerButler.Tasks
 
                 if (newHealthState == HealthState.Unknown || newHealthState == HealthState.Low)
                 {
-                    switch (OnHealthLow)
+                    switch (HealthChangeAction)
                     {
                         case HealthChangeAction.Exit:
                             Process.InternalProcess.CloseMainWindow();

@@ -49,20 +49,20 @@ namespace ConquerButler
         protected readonly ConquerScheduler Scheduler;
 
         public ConquerProcess Process { get; }
-        public double Interval { get; set; } = 10;
-        public int IntervalVariance { get; set; } = 1;
-        public long StartTick { get; protected set; }
-        public double NextRun { get; protected set; }
 
-        public int Priority { get; protected set; } = DEFAULT_PRIORITY;
-
+        public string TaskType { get; protected set; }
         public bool Enabled { get; protected set; } = true;
         public bool IsRunning { get; protected set; } = false;
         public bool IsPaused { get; protected set; } = true;
-        public bool NeedsUserFocus { get; protected set; } = false;
-        public bool NeedsToBeConnected { get; protected set; } = true;
 
-        public string TaskType { get; protected set; }
+        public long StartTick { get; protected set; }
+        public double NextRun { get; protected set; }
+
+        public double Interval { get; set; } = 10;
+        public int IntervalVariance { get; set; } = 1;
+        public int Priority { get; set; } = DEFAULT_PRIORITY;
+        public bool NeedsUserFocus { get; set; } = false;
+        public bool NeedsToBeConnected { get; set; } = true;
 
         protected CancellationTokenSource CancellationToken;
         protected Task CurrentTask;
@@ -138,6 +138,14 @@ namespace ConquerButler
         }
 
         public abstract Task DoTick();
+
+        public void ForceRun()
+        {
+            if (!IsRunning)
+            {
+                NextRun = 0;
+            }
+        }
 
         public void Pause()
         {

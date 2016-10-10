@@ -19,8 +19,9 @@ namespace ConquerButler.Tasks
         private readonly TemplatePyramid _ironoreTemplate;
 
         public int OreCount { get; protected set; }
+        public int TotalOresDropped { get; protected set; }
 
-        public override string ResultDisplayInfo { get { return $"{OreCount}"; } }
+        public override string ResultDisplayInfo { get { return $"{OreCount} > {TotalOresDropped}"; } }
 
         public MiningTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
@@ -28,8 +29,8 @@ namespace ConquerButler.Tasks
             _copperoreTemplate = LoadTemplate("images/copperore.png");
             _ironoreTemplate = LoadTemplate("images/ironore.png");
 
-            Interval = 180;
-            IntervalVariance = 60;
+            Interval = 120;
+            IntervalVariance = 20;
         }
 
         public override async Task DoTick()
@@ -52,6 +53,7 @@ namespace ConquerButler.Tasks
                     Scheduler.Wait(250);
 
                     OreCount--;
+                    TotalOresDropped++;
                 }, i));
             }
 

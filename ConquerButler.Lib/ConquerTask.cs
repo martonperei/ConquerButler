@@ -113,6 +113,8 @@ namespace ConquerButler
                         try
                         {
                             await DoTick();
+
+                            log.Info($"Process {Process.Id} - task {TaskType} finished - {ResultDisplayInfo}");
                         }
                         catch (Exception e)
                         {
@@ -195,26 +197,29 @@ namespace ConquerButler
 
                 watch.Restart();
 
-                List<Match> matches = new List<Match>();
+                List<Match> matches = sourceTemplate.MatchTemplates(templates, (int)(similiarity * 100), true);
 
-                foreach (Match m in sourceTemplate.MatchTemplates(templates, (int)(similiarity * 100), true))
+                List<Match> bestMatches = new List<Match>();
+
+                var matchGroups = new MatchClustering(0).Group(matches.ToArray());
+                foreach (var group in matchGroups)
                 {
                     var match = new Match
                     {
-                        X = m.X + sourceRect.Left,
-                        Y = m.Y + sourceRect.Top,
-                        Score = m.Score,
-                        Template = m.Template
+                        X = group.Representative.X + sourceRect.Left,
+                        Y = group.Representative.Y + sourceRect.Top,
+                        Score = group.Representative.Score,
+                        Template = group.Representative.Template
                     };
 
-                    matches.Add(match);
+                    bestMatches.Add(match);
                 }
 
                 log.Debug($"Process {Process.Id} - task {TaskType} - detection took {watch.ElapsedMilliseconds}ms");
 
-                matches.Sort(_matchComparer);
+                bestMatches.Sort(_matchComparer);
 
-                return matches;
+                return bestMatches;
             }
         }
 

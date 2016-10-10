@@ -28,13 +28,13 @@ namespace ConquerButler.Tasks
             _copperoreTemplate = LoadTemplate("images/copperore.png");
             _ironoreTemplate = LoadTemplate("images/ironore.png");
 
-            Interval = 240;
+            Interval = 180;
             IntervalVariance = 60;
         }
 
         public override async Task DoTick()
         {
-            List<Match> matches = FindMatches(0.95f, ConquerControls.INVENTORY, _ironoreTemplate, _copperoreTemplate);
+            List<Match> matches = FindMatches(0.93f, ConquerControls.INVENTORY, _ironoreTemplate, _copperoreTemplate);
 
             OreCount = matches.Count;
 

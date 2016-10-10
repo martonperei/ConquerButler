@@ -34,24 +34,24 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="3*" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="90" />
         </Grid.ColumnDefinitions>
 
         <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left">
-            <Button x:Name="ForceRunTasks" Width="80" Height="25" Margin="0,0,0,10"
+            <Button x:Name="ForceRunTasks" Width="60" Height="25" Margin="0,0,0,10"
                     Content="Force run" Click="ForceRunTasks_OnClick"/>
 
-            <Button x:Name="ResumeTasks" Width="80" Height="25" Margin="10,0,0,10"
-                    Content="Resume tasks" Click="ResumeTasks_OnClick"/>
+            <Button x:Name="ResumeTasks" Width="60" Height="25" Margin="10,0,0,10"
+                    Content="Resume" Click="ResumeTasks_OnClick"/>
 
-            <Button x:Name="PauseTasks" Width="80" Height="25" Margin="10,0,0,10"
-                    Content="Pause tasks" Click="PauseTasks_OnClick"/>
+            <Button x:Name="PauseTasks" Width="60" Height="25" Margin="10,0,0,10"
+                    Content="Pause" Click="PauseTasks_OnClick"/>
 
-            <Button x:Name="AddTask" Width="80" Height="25"  Margin="10,0,0,10"
-                            Content="Add tasks" Click="AddTasks_Click"/>
+            <Button x:Name="AddTask" Width="60" Height="25"  Margin="10,0,0,10"
+                            Content="Add" Click="AddTasks_Click"/>
 
-            <Button x:Name="RemoveTask" Width="80" Height="25"  Margin="10,0,0,10"
-                            Content="Remove tasks" Click="RemoveTasks_Click"/>
+            <Button x:Name="RemoveTask" Width="60" Height="25"  Margin="10,0,0,10"
+                            Content="Remove" Click="RemoveTasks_Click"/>
         </StackPanel>
 
         <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">

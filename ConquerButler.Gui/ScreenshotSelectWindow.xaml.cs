@@ -17,6 +17,24 @@ namespace ConquerButler.Gui
         public BitmapSource CanvasSource { get; set; }
 
         public Point MousePosition { get; set; }
+
+        public string MousePositionInfo
+        {
+            get
+            {
+                return $"X {MousePosition.X,-5:F0} Y {MousePosition.Y,-5:F0}";
+            }
+        }
+
+        public string SelectedRectangleInfo
+        {
+            get
+            {
+                return $"X {SelectedRectangle.X,-5:F0} Y {SelectedRectangle.Y,-5:F0} Width {SelectedRectangle.Width,-5:F0} Height {SelectedRectangle.Height,-5:F0}";
+            }
+        }
+
+        public Rect SelectedRectangle { get; set; }
     }
 
     public partial class ScreenshotSelectWindow : Window
@@ -138,7 +156,12 @@ namespace ConquerButler.Gui
 
         private void Canvas_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            drawingRectangle = null;
+            if (drawingRectangle != null)
+            {
+                Model.SelectedRectangle = drawingRectangle.GetBounds();
+
+                drawingRectangle = null;
+            }
         }
 
         private void SetPoints(StylusPointCollection collection, double x, double y, double w, double h)

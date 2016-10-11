@@ -47,13 +47,13 @@ namespace ConquerButler.Tasks
 
             HealthState = HealthState.None;
 
-            Interval = 2;
+            Interval = 1;
             IntervalVariance = 0;
         }
 
         public override Task DoTick()
         {
-            List<Match> isFullHp = FindMatches(0.95f, ConquerControls.HEALTH, _fullhpTemplate);
+            List<Match> isFullHp = FindMatches(0.99f, ConquerControls.HEALTH, _fullhpTemplate);
 
             HealthState newHealthState = HealthState.Unknown;
 
@@ -63,7 +63,7 @@ namespace ConquerButler.Tasks
             }
             else
             {
-                List<Match> isLowHp = FindMatches(0.95f, ConquerControls.HEALTH, _lowhpTemplate);
+                List<Match> isLowHp = FindMatches(0.99f, ConquerControls.HEALTH, _lowhpTemplate);
 
                 if (isLowHp.Count > 0)
                 {

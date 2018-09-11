@@ -5,12 +5,13 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ConquerButler
+namespace ConquerButler.Native
 {
     public class ProcessWatcher : IDisposable
     {
         private static ILog log = LogManager.GetLogger(typeof(ProcessWatcher));
 
+        private const string PROCESS_NAME = "Conquer";
         private const string DIALOG_CLASS_NAME = "#32770";
         private const string DISCONNECTED_TEXT = "Error: Disconnected with game server. Please login the game again!";
 
@@ -37,9 +38,9 @@ namespace ConquerButler
 
         public int CheckInterval { get; set; } = 10000;
 
-        public ProcessWatcher(string name)
+        public ProcessWatcher()
         {
-            ProcessName = name;
+            ProcessName = PROCESS_NAME;
             Processes = new HashSet<int>();
             DisconnectedProcesses = new HashSet<int>();
         }

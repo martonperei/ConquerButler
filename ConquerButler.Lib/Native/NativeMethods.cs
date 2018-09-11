@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace ConquerButler
+namespace ConquerButler.Native
 {
     public enum DeviceCap
     {

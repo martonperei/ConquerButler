@@ -1,5 +1,4 @@
 ﻿using log4net;
-using PropertyChanged;
 using System;
 using System.Drawing;
 using System.Collections.Concurrent;
@@ -9,11 +8,13 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using WindowsInput;
+using ConquerButler.Native;
+using PropertyChanged;
 
 namespace ConquerButler
 {
-    [ImplementPropertyChanged]
-    public class ConquerProcess : IDisposable, INotifyPropertyChanged
+    [AddINotifyPropertyChangedInterface]
+    public class ConquerProcess : IDisposable
     {
         private static ILog log = LogManager.GetLogger(typeof(ConquerProcess));
 
@@ -37,16 +38,9 @@ namespace ConquerButler
         }
 
         public bool Invalid { get; protected set; }
-        public Point MousePosition { get; set; }
         public InputSimulator Simulator { get; protected set; }
 
-        public ObservableCollection<ConquerTask> Tasks { get; set; }
-
         public event Action<bool> ProcessStateChange;
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        private readonly ConcurrentQueue<ConquerTask> _addedTasks;
-        private readonly ConcurrentQueue<ConquerTask> _removedTasks;
 
         private readonly Random _random;
 
@@ -55,120 +49,9 @@ namespace ConquerButler
             Id = process.Id;
             InternalProcess = process;
             Scheduler = scheduler;
-            Tasks = new ObservableCollection<ConquerTask>();
             Simulator = new InputSimulator();
 
             _random = new Random();
-
-            _addedTasks = new ConcurrentQueue<ConquerTask>();
-            _removedTasks = new ConcurrentQueue<ConquerTask>();
-        }
-
-        public void AddTask(ConquerTask task)
-        {
-            if (!Tasks.Any(t => t.TaskType.Equals(task.TaskType)))
-            {
-                _addedTasks.Enqueue(task);
-            }
-
-            log.Info($"Process {InternalProcess.Id} - task {task.TaskType} added");
-        }
-
-        public void RemoveTask(ConquerTask task)
-        {
-            _removedTasks.Enqueue(task);
-
-            log.Info($"Process {InternalProcess.Id} - task {task.TaskType} removed");
-        }
-
-        public void PauseTask<T>()
-        {
-            foreach (ConquerTask task in Tasks)
-            {
-                if (typeof(T) == task.GetType())
-                {
-                    task.Pause();
-                }
-            }
-        }
-
-        public void Tick(double dt)
-        {
-            if (HasUserFocus())
-            {
-                MousePosition = GetCursorPosition();
-            }
-            else
-            {
-                MousePosition = Point.Empty;
-            }
-
-            while (_removedTasks.Count > 0)
-            {
-                ConquerTask task;
-
-                _removedTasks.TryDequeue(out task);
-
-                if (task != null)
-                {
-                    Tasks.Remove(task);
-
-                    task.Cancel();
-                }
-            }
-
-            while (_addedTasks.Count > 0)
-            {
-                ConquerTask task;
-
-                _addedTasks.TryDequeue(out task);
-
-                if (task != null)
-                {
-                    Tasks.Add(task);
-                }
-            }
-
-            foreach (ConquerTask task in Tasks)
-            {
-                task.Tick(dt);
-            }
-        }
-
-        public void Invalidate()
-        {
-            Invalid = true;
-
-            foreach (ConquerTask task in Tasks)
-            {
-                task.Cancel();
-            }
-
-            log.Info($"Process {InternalProcess.Id} - invalidated");
-        }
-
-        public void Pause()
-        {
-            foreach (ConquerTask task in Tasks)
-            {
-                task.Pause();
-            }
-        }
-
-        public void Resume()
-        {
-            foreach (ConquerTask task in Tasks)
-            {
-                task.Resume();
-            }
-        }
-
-        public void Cancel()
-        {
-            foreach (ConquerTask task in Tasks)
-            {
-                task.Cancel();
-            }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -241,11 +124,6 @@ namespace ConquerButler
             if (disposing)
             {
                 Invalid = true;
-
-                foreach (ConquerTask task in Tasks)
-                {
-                    task.Dispose();
-                }
             }
         }
     }

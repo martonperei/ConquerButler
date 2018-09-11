@@ -7,10 +7,11 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using ConquerButler.Native;
 
 namespace ConquerButler.Gui
 {
-    [ImplementPropertyChanged]
+    [AddINotifyPropertyChangedInterface]
     public class ScreenshotSelectModel
     {
         public System.Drawing.Bitmap ScreenshotCopy { get; set; }

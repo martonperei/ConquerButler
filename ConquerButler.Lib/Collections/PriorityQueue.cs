@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace ConquerButler
+namespace ConquerButler.Collections
 {
     /// <summary>
     /// Heap-based resizable max-priority queue.

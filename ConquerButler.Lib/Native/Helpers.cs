@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace ConquerButler
+namespace ConquerButler.Native
 {
     public class Helpers
     {
@@ -152,12 +151,12 @@ namespace ConquerButler
 
         public static IEnumerable<Process> GetProcessesByTitle(string title)
         {
-            return Process.GetProcesses().Where(process => process.ProcessName.StartsWith(title));
+            return Process.GetProcesses().Where(process => process.MainWindowTitle.Equals(title));
         }
 
         public static IEnumerable<Process> GetProcesses(string processName)
         {
-            return Process.GetProcesses().Where(process => process.ProcessName.StartsWith(processName));
+            return Process.GetProcesses().Where(process => process.ProcessName.Equals(processName));
         }
 
         public static List<IntPtr> GetAllChildHandles(IntPtr handle)
@@ -206,6 +205,11 @@ namespace ConquerButler
 
             return target;
         }
+
+        public static Predicate<Color> YELLOW_FILTER = (c) =>
+        {
+            return c.GetHue() == 60 && c.GetBrightness() == 0.5f;
+        };
 
         public static Bitmap PrintWindow(Process process)
         {

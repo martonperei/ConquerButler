@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Drawing;
 using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
+using ConquerButler.Native;
 
 namespace ConquerButler.Tasks
 {
@@ -35,7 +36,7 @@ namespace ConquerButler.Tasks
 
         public override async Task DoTick()
         {
-            List<Match> matches = FindMatches(0.93f, ConquerControls.INVENTORY, _ironoreTemplate, _copperoreTemplate);
+            List<Match> matches = FindMatches(0.93f, ConquerControlConstants.INVENTORY, _ironoreTemplate, _copperoreTemplate);
 
             OreCount = matches.Count;
 
@@ -47,22 +48,23 @@ namespace ConquerButler.Tasks
             {
                 Match m = matches[i];
 
-                taskList.Add(RequestInputFocus(() =>
+                taskList.Add(EnqueueInputAction(async () =>
                 {
                     Process.LeftClick(m.Center());
-                    Scheduler.Wait(250);
+                    await Scheduler.Delay(250);
                     Process.LeftClick(DROP_POINT, 20);
-                    Scheduler.Wait(250);
-
+                    await Scheduler.Delay(250);
 
                     OreCount--;
                     TotalOresDropped++;
                 }, i));
             }
 
-            taskList.Add(RequestInputFocus(() =>
+            taskList.Add(EnqueueInputAction(() =>
             {
                 Process.RightClick(DROP_POINT, 20);
+
+                return Task.CompletedTask;
             }, 0));
 
             await Task.WhenAll(taskList);

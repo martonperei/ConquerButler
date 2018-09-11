@@ -12,10 +12,11 @@ using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Windows;
+using ConquerButler.Native;
 
 namespace ConquerButler.Gui
 {
-    [ImplementPropertyChanged]
+    [AddINotifyPropertyChangedInterface]
     public class ConquerTaskModel : INotifyPropertyChanged
     {
         public bool IsSelected { get; set; }
@@ -57,8 +58,8 @@ namespace ConquerButler.Gui
         }
     }
 
-    [ImplementPropertyChanged]
-    public class ConquerProcessModel : INotifyPropertyChanged
+    [AddINotifyPropertyChangedInterface]
+    public class ConquerProcessModel
     {
         public bool IsSelected { get; set; }
 
@@ -98,13 +99,9 @@ namespace ConquerButler.Gui
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
         public ConquerProcessModel(ConquerProcess process)
         {
             ConquerProcess = process;
-
-            process.Tasks.CollectionChanged += Tasks_CollectionChanged;
 
             Disconnected = process.Disconnected;
 
@@ -118,28 +115,6 @@ namespace ConquerButler.Gui
             Application.Current.Dispatcher.Invoke(() => Disconnected = isDisconnected);
         }
 
-        private void Tasks_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                switch (e.Action)
-                {
-                    case NotifyCollectionChangedAction.Add:
-                        foreach (ConquerTask task in e.NewItems)
-                        {
-                            Tasks.Add(new ConquerTaskModel(task));
-                        }
-                        break;
-                    case NotifyCollectionChangedAction.Remove:
-                        foreach (ConquerTask task in e.OldItems)
-                        {
-                            Tasks.Remove(Tasks.First(m => m.ConquerTask == task));
-                        }
-                        break;
-                }
-            });
-        }
-
         public void Refresh()
         {
             Screenshot?.Dispose();
@@ -148,7 +123,7 @@ namespace ConquerButler.Gui
         }
     }
 
-    [ImplementPropertyChanged]
+    [AddINotifyPropertyChangedInterface]
     public class ConquerButlerModel
     {
         public ObservableCollection<ConquerProcessModel> Processes { get; set; } = new ObservableCollection<ConquerProcessModel>();
@@ -175,10 +150,25 @@ namespace ConquerButler.Gui
         protected override void OnSourceInitialized(EventArgs e)
         {
             globalHotkey = new GlobalHotkey(this);
-            globalHotkey.HotkeyPressed += (s, e2) => scheduler.CancelRunning();
+            globalHotkey.HotkeyPressed += (s, e2) =>
+            {
+                foreach (ConquerTask task in scheduler.Tasks)
+                {
+                    if (task.IsPaused)
+                    {
+                        task.Resume();
+                    }
+                    else
+                    {
+                        task.Pause();
+                    }
+                }
+            };
 
             scheduler = new ConquerScheduler();
             scheduler.Processes.CollectionChanged += Processes_CollectionChanged;
+            scheduler.Tasks.CollectionChanged += Tasks_CollectionChanged;
+
             scheduler.Start();
 
             updateScreenshot.Tick += (s, o) =>
@@ -188,7 +178,7 @@ namespace ConquerButler.Gui
                     process.Refresh();
                 }
             };
-            updateScreenshot.Interval = new TimeSpan(0, 0, 0, 30);
+            updateScreenshot.Interval = new TimeSpan(0, 0, 0, 5);
             updateScreenshot.Start();
 
             log.Info("Initialized Window");
@@ -222,6 +212,30 @@ namespace ConquerButler.Gui
             });
         }
 
+        private void Tasks_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                switch (e.Action)
+                {
+                    case NotifyCollectionChangedAction.Add:
+                        foreach (ConquerTask task in e.NewItems)
+                        {
+                            ConquerProcessModel model = Model.Processes.Where(p => p.ConquerProcess.Equals(task.Process)).First();
+                            model.Tasks.Add(new ConquerTaskModel(task));
+                        }
+                        break;
+                    case NotifyCollectionChangedAction.Remove:
+                        foreach (ConquerTask task in e.OldItems)
+                        {
+                            ConquerProcessModel model = Model.Processes.Where(p => p.ConquerProcess.Equals(task.Process)).First();
+                            model.Tasks.Remove(model.Tasks.First(m => m.ConquerTask == task));
+                        }
+                        break;
+                }
+            });
+        }
+
         private void ForceRunTasks_OnClick(object sender, RoutedEventArgs e)
         {
             IEnumerable<ConquerProcessModel> processes = Model.Processes.Where(p => p.IsSelected);
@@ -241,7 +255,10 @@ namespace ConquerButler.Gui
 
             foreach (ConquerProcessModel process in processes)
             {
-                process.ConquerProcess.Resume();
+                foreach (ConquerTask task in scheduler.Tasks.Where(t => t.Process.Equals(process.ConquerProcess)))
+                {
+                    task.Resume();
+                }
             }
         }
 
@@ -251,7 +268,10 @@ namespace ConquerButler.Gui
 
             foreach (ConquerProcessModel process in processes)
             {
-                process.ConquerProcess.Pause();
+                foreach (ConquerTask task in scheduler.Tasks.Where(t => t.Process.Equals(process.ConquerProcess)))
+                {
+                    task.Pause();
+                }
             }
         }
 
@@ -281,7 +301,7 @@ namespace ConquerButler.Gui
             {
                 foreach (ConquerTaskModel task in tasks)
                 {
-                    task.ConquerTask.Remove();
+                    scheduler.RemoveTask(task.ConquerTask);
                 }
             }
             else
@@ -292,7 +312,7 @@ namespace ConquerButler.Gui
                 {
                     foreach (ConquerTaskModel task in process.Tasks)
                     {
-                        task.ConquerTask.Remove();
+                        scheduler.RemoveTask(task.ConquerTask);
                     }
                 }
             }

@@ -4,13 +4,13 @@ using log4net;
 using PropertyChanged;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
 using System.Linq;
 using System.Drawing;
+using ConquerButler.Native;
 
 namespace ConquerButler
 {
@@ -35,8 +35,8 @@ namespace ConquerButler
         }
     }
 
-    [ImplementPropertyChanged]
-    public abstract class ConquerTask : IDisposable, INotifyPropertyChanged
+    [AddINotifyPropertyChangedInterface]
+    public abstract class ConquerTask : IDisposable
     {
         private static ILog log = LogManager.GetLogger(typeof(ConquerTask));
 
@@ -44,13 +44,11 @@ namespace ConquerButler
 
         private static readonly MatchComparer _matchComparer = new MatchComparer();
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected readonly ConquerScheduler Scheduler;
+        public ConquerScheduler Scheduler { get; }
 
         public ConquerProcess Process { get; }
 
-        public string TaskType { get; protected set; }
+        public string TaskType { get; set; }
         public bool Enabled { get; protected set; } = true;
         public bool IsRunning { get; protected set; } = false;
         public bool IsPaused { get; protected set; } = true;
@@ -69,7 +67,7 @@ namespace ConquerButler
 
         protected readonly Random Random;
 
-        public virtual string ResultDisplayInfo { get { return ""; } }
+        public virtual string ResultDisplayInfo { get { return ""; } protected set { } }
 
         public ConquerTask(string taskType, ConquerProcess process)
         {
@@ -80,16 +78,12 @@ namespace ConquerButler
             Random = new Random();
         }
 
-        public void Add()
+        public void OnHealthChanged(int previous, int current)
         {
-            Process.AddTask(this);
         }
 
-        public void Remove()
+        public void OnManaChanged(int previous, int current)
         {
-            Cancel();
-
-            Process.RemoveTask(this);
         }
 
         public void Tick(double dt)
@@ -178,20 +172,28 @@ namespace ConquerButler
             log.Info($"Process {Process.Id} - task {TaskType} canceled");
         }
 
-        public Task RequestInputFocus(Action action, int priority)
+        public Task EnqueueInputAction(Func<Task> action, int priority)
         {
             CancellationToken.Token.ThrowIfCancellationRequested();
 
-            var focusAction = Scheduler.RequestInputFocus(this, action, priority);
+            ConquerInputAction inputAction = new ConquerInputAction()
+            {
+                Task = this,
+                Action = action,
+                Priority = priority,
+            };
 
-            return focusAction.TaskCompletion.Task;
+            Scheduler.AddInputAction(inputAction);
+
+            return inputAction.ActionCompletion.Task;
         }
 
-        protected TemplatePyramid LoadTemplate(string fileName)
+        protected TemplatePyramid LoadTemplate(string fileName, string class_ = null)
         {
             using (var image = new Bitmap(fileName))
             {
-                return TemplatePyramid.CreatePyramid(image.ToBgr(), fileName);
+
+                return TemplatePyramid.CreatePyramid(image.ToBgr(), class_ ?? fileName);
             }
         }
 

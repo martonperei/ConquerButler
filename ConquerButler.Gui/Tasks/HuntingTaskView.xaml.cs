@@ -4,7 +4,6 @@ using System.Windows.Controls;
 
 namespace ConquerButler.Gui.Tasks
 {
-    [ImplementPropertyChanged]
     public class HuntingTaskViewModel : ConquerTaskViewModel
     {
     }
@@ -14,7 +13,8 @@ namespace ConquerButler.Gui.Tasks
         public HuntingTaskViewModel Model { get; set; } = new HuntingTaskViewModel()
         {
             NeedsUserFocus = true,
-            Interval = 0
+            Interval = 0,
+            TaskType = HuntingTask.TASK_TYPE_NAME
         };
 
         public HuntingTaskView()
@@ -30,6 +30,7 @@ namespace ConquerButler.Gui.Tasks
             task.Priority = Model.Priority;
             task.NeedsUserFocus = Model.NeedsUserFocus;
             task.NeedsToBeConnected = Model.NeedsToBeConnected;
+            task.TaskType = Model.TaskType;
 
             return task;
         }

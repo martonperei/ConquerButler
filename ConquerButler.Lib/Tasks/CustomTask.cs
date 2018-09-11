@@ -9,14 +9,16 @@ namespace ConquerButler.Tasks
 
         public static string TASK_TYPE_NAME = "Custom";
 
+        public override string ResultDisplayInfo { get; protected set; }
+
         public CustomTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
         }
 
-        public override Task DoTick()
+        public async override Task DoTick()
         {
-            return Task.FromResult(true);
+            await Task.FromResult(true);
         }
 
         protected override void Dispose(bool disposing)

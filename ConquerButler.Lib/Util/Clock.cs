@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace ConquerButler
+namespace ConquerButler.Util
 {
     public class Clock
     {

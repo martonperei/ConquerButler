@@ -3,6 +3,7 @@ using log4net;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
 
 namespace ConquerButler.Tasks
@@ -18,22 +19,25 @@ namespace ConquerButler.Tasks
         public ItemFindPauseTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
-            Interval = 10;
+            Interval = 0.1;
 
             _dropTemplate = LoadTemplate("images/drop.png");
         }
 
         public override Task DoTick()
         {
-            List<Match> isDrop = FindMatches(0.95f, ConquerControls.CHAT_AREA, _dropTemplate);
+            List<Match> isDrop = FindMatches(0.95f, ConquerControlConstants.CHAT_AREA, _dropTemplate);
 
             if (isDrop.Count > 0)
             {
-                // TODO: what to pause?
-                foreach (ConquerTask task in Process.Tasks.Where(t => t.NeedsUserFocus))
+                foreach (ConquerTask task in Scheduler.Tasks.Where(t => t.Process.Equals(Process) && t.NeedsUserFocus))
                 {
                     task.Pause();
                 }
+
+                MessageBox.Show($"Item dropped");
+
+                Pause();
             }
 
             return Task.FromResult(true);

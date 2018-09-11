@@ -19,22 +19,22 @@ namespace ConquerButler.Tasks
 
         public async override Task DoTick()
         {
-            await RequestInputFocus(() =>
+            await EnqueueInputAction(async () =>
             {
                 Process.Simulator.Mouse.RightButtonClick();
-                Scheduler.Wait(125);
+                await Scheduler.Delay(125);
             }, 1);
 
-            await RequestInputFocus(() =>
+            await EnqueueInputAction(async () =>
             {
                 Process.Simulator.Mouse.LeftButtonClick();
-                Scheduler.Wait(125);
+                await Scheduler.Delay(125);
             }, 1);
 
-            await RequestInputFocus(() =>
+            await EnqueueInputAction(async () =>
             {
                 Process.Simulator.Mouse.RightButtonClick();
-                Scheduler.Wait(125);
+                await Scheduler.Delay(125);
             }, 1);
         }
 

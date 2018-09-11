@@ -5,36 +5,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System;
 
 namespace ConquerButler.Gui
 {
     public delegate ConquerTask ConquerTaskFactoryFunc(ConquerProcess process);
 
-    [ImplementPropertyChanged]
+    [AddINotifyPropertyChangedInterface]
     public class TaskTypeModel
     {
         public string TaskType { get; set; }
 
         public bool IsSelected { get; set; }
 
-        public ConquerTaskViewBase<ConquerTaskViewModel> Content { get; set; }
-
-        private ConquerTaskFactoryFunc _factory;
-
-        public ConquerTaskFactoryFunc Factory
+        public UserControl Content
         {
             get
             {
-                return _factory ?? (Content as ConquerTaskViewBase<ConquerTaskViewModel>).CreateTask;
-            }
-            set
-            {
-                _factory = value;
+                return Factory as UserControl;
             }
         }
+
+        public ConquerTaskViewBase<ConquerTaskViewModel> Factory { get; set; }
     }
 
-    [ImplementPropertyChanged]
+    [AddINotifyPropertyChangedInterface]
     public class TaskViewWindowModel
     {
         public List<ConquerProcessModel> Processes { get; set; }
@@ -47,8 +42,36 @@ namespace ConquerButler.Gui
         {
             get
             {
-                return SelectedTaskType?.Content?.Model;
+                return SelectedTaskType?.Factory?.Model;
             }
+        }
+    }
+
+    public class DefaultTaskFactory<T> : ConquerTaskViewBase<CustomTaskViewModel>
+        where T: ConquerTask
+    {
+        public CustomTaskViewModel Model { get; } = new CustomTaskViewModel();
+
+        public DefaultTaskFactory()
+        {
+
+        }
+
+        public ConquerTask CreateTask(ConquerProcess process)
+        {
+            T task = (T)Activator.CreateInstance(typeof(T), process);
+
+            task.Interval = Model.Interval;
+            task.Priority = Model.Priority;
+            task.NeedsUserFocus = Model.NeedsUserFocus;
+            task.NeedsToBeConnected = Model.NeedsToBeConnected;
+
+            if (Model.TaskType != null)
+            {
+                task.TaskType = Model.TaskType;
+            }
+
+            return task;
         }
     }
 
@@ -60,13 +83,15 @@ namespace ConquerButler.Gui
         {
             InitializeComponent();
 
-            Model.TaskTypes.Add(new TaskTypeModel() { TaskType = MiningTask.TASK_TYPE_NAME, Content = new MiningTaskView() });
-            Model.TaskTypes.Add(new TaskTypeModel() { TaskType = HuntingTask.TASK_TYPE_NAME, Content = new HuntingTaskView() });
-            Model.TaskTypes.Add(new TaskTypeModel() { TaskType = HealthWatcherTask.TASK_TYPE_NAME, Content = new HealthWatcherTaskView() });
-            Model.TaskTypes.Add(new TaskTypeModel() { TaskType = CustomTask.TASK_TYPE_NAME, Content = new CustomTaskView() });
+            Model.TaskTypes.Add(new TaskTypeModel() { TaskType = MiningTask.TASK_TYPE_NAME, Factory = new MiningTaskView() });
+            Model.TaskTypes.Add(new TaskTypeModel() { TaskType = HuntingTask.TASK_TYPE_NAME, Factory = new HuntingTaskView() });
+            Model.TaskTypes.Add(new TaskTypeModel() { TaskType = StatsWatcherTask.TASK_TYPE_NAME, Factory = new StatsWatcherTaskView() });
+            Model.TaskTypes.Add(new TaskTypeModel() { TaskType = XPSkillTask.TASK_TYPE_NAME, Factory = new XPSkillTaskView() });
+            Model.TaskTypes.Add(new TaskTypeModel() { TaskType = ClickTask.TASK_TYPE_NAME, Factory = new ClickTaskView() });
+            //Model.TaskTypes.Add(new TaskTypeModel() { TaskType = CustomTask.TASK_TYPE_NAME, Content = new CustomTaskView() });
 
-            Model.TaskTypes.Add(new TaskTypeModel() { TaskType = FlyTask.TASK_TYPE_NAME, Factory = p => new FlyTask(p) });
-            Model.TaskTypes.Add(new TaskTypeModel() { TaskType = ItemFindPauseTask.TASK_TYPE_NAME, Factory = p => new ItemFindPauseTask(p) });
+            Model.TaskTypes.Add(new TaskTypeModel() { TaskType = ItemFindPauseTask.TASK_TYPE_NAME, Factory = new DefaultTaskFactory<ItemFindPauseTask>() });
+            //Model.TaskTypes.Add(new TaskTypeModel() { TaskType = CoordinatesTask.TASK_TYPE_NAME, Factory = new DefaultTaskFactory<CoordinatesTask>() }); 
         }
 
         private void TaskTypeList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -82,8 +107,8 @@ namespace ConquerButler.Gui
             {
                 foreach (ConquerProcessModel process in Model.Processes)
                 {
-                    ConquerTask task = taskType.Factory(process.ConquerProcess);
-                    task.Add();
+                    ConquerTask task = taskType.Factory.CreateTask(process.ConquerProcess);
+                    process.ConquerProcess.Scheduler.AddTask(task);
                 }
             }
 

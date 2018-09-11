@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ConquerButler.Gui"
         mc:Ignorable="d"
-        Title="ScreenshotSelectWindow" Icon="chef.ico" Height="830" Width="1120"
+        Title="ScreenshotSelectWindow" Icon="chef.ico" Height="860" Width="1120"
         DataContext="{Binding RelativeSource={RelativeSource Mode=Self}}">
     <Grid Margin="10,10,10,10">
         <Grid.RowDefinitions>

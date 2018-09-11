@@ -1,35 +1,37 @@
 ﻿using ConquerButler.Tasks;
 using PropertyChanged;
+using System;
 using System.Windows.Controls;
 
 namespace ConquerButler.Gui.Tasks
 {
-    public class MiningTaskViewModel : ConquerTaskViewModel
+    public class StatsWatcherTaskViewModel : ConquerTaskViewModel
     {
     }
 
-    public partial class MiningTaskView : UserControl, ConquerTaskViewBase<MiningTaskViewModel>
+    public partial class StatsWatcherTaskView : UserControl, ConquerTaskViewBase<StatsWatcherTaskViewModel>
     {
-        public MiningTaskViewModel Model { get; set; } = new MiningTaskViewModel()
+        public StatsWatcherTaskViewModel Model { get; set; } = new StatsWatcherTaskViewModel()
         {
-            Interval = 60,
-            TaskType = MiningTask.TASK_TYPE_NAME
+            Interval = 1,
+            TaskType = StatsWatcherTask.TASK_TYPE_NAME
         };
 
-        public MiningTaskView()
+        public StatsWatcherTaskView()
         {
             InitializeComponent();
         }
 
         public ConquerTask CreateTask(ConquerProcess process)
         {
-            var task = new MiningTask(process);
+            var task = new StatsWatcherTask(process);
 
             task.Interval = Model.Interval;
             task.Priority = Model.Priority;
             task.NeedsUserFocus = Model.NeedsUserFocus;
-            task.NeedsToBeConnected = Model.NeedsToBeConnected;
             task.TaskType = Model.TaskType;
+
+            task.NeedsToBeConnected = Model.NeedsToBeConnected;
 
             return task;
         }

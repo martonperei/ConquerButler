@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Windows.Controls;
 
-namespace ConquerButler.Gui.Tasks
+namespace ConquerButler.Gui.Views.Tasks
 {
     public class CustomTaskViewModel : ConquerTaskViewModel
     {

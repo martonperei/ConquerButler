@@ -13,10 +13,10 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Windows;
 using ConquerButler.Native;
+using ConquerButler.Gui.Input;
 
-namespace ConquerButler.Gui
+namespace ConquerButler.Gui.Views
 {
-    [AddINotifyPropertyChangedInterface]
     public class ConquerTaskModel : INotifyPropertyChanged
     {
         public bool IsSelected { get; set; }
@@ -127,8 +127,6 @@ namespace ConquerButler.Gui
     public class ConquerButlerModel
     {
         public ObservableCollection<ConquerProcessModel> Processes { get; set; } = new ObservableCollection<ConquerProcessModel>();
-
-        public List<ConquerProcessModel> SelectedProcesses { get; set; }
     }
 
     public partial class MainWindow : Window
@@ -205,7 +203,7 @@ namespace ConquerButler.Gui
                     case NotifyCollectionChangedAction.Remove:
                         foreach (ConquerProcess process in e.OldItems)
                         {
-                            Model.Processes.Remove(Model.Processes.First(m => m.ConquerProcess == process));
+                            Model.Processes.Remove(Model.Processes.Single(m => m.ConquerProcess == process));
                         }
                         break;
                 }
@@ -221,15 +219,15 @@ namespace ConquerButler.Gui
                     case NotifyCollectionChangedAction.Add:
                         foreach (ConquerTask task in e.NewItems)
                         {
-                            ConquerProcessModel model = Model.Processes.Where(p => p.ConquerProcess.Equals(task.Process)).First();
+                            ConquerProcessModel model = Model.Processes.Where(p => p.ConquerProcess.Equals(task.Process)).Single();
                             model.Tasks.Add(new ConquerTaskModel(task));
                         }
                         break;
                     case NotifyCollectionChangedAction.Remove:
                         foreach (ConquerTask task in e.OldItems)
                         {
-                            ConquerProcessModel model = Model.Processes.Where(p => p.ConquerProcess.Equals(task.Process)).First();
-                            model.Tasks.Remove(model.Tasks.First(m => m.ConquerTask == task));
+                            ConquerProcessModel model = Model.Processes.Where(p => p.ConquerProcess.Equals(task.Process)).Single();
+                            model.Tasks.Remove(model.Tasks.Single(m => m.ConquerTask == task));
                         }
                         break;
                 }
@@ -255,9 +253,9 @@ namespace ConquerButler.Gui
 
             foreach (ConquerProcessModel process in processes)
             {
-                foreach (ConquerTask task in scheduler.Tasks.Where(t => t.Process.Equals(process.ConquerProcess)))
+                foreach (ConquerTaskModel task in process.Tasks)
                 {
-                    task.Resume();
+                    task.ConquerTask.Resume();
                 }
             }
         }
@@ -268,9 +266,9 @@ namespace ConquerButler.Gui
 
             foreach (ConquerProcessModel process in processes)
             {
-                foreach (ConquerTask task in scheduler.Tasks.Where(t => t.Process.Equals(process.ConquerProcess)))
+                foreach (ConquerTaskModel task in process.Tasks)
                 {
-                    task.Pause();
+                    task.ConquerTask.Pause();
                 }
             }
         }
@@ -295,7 +293,7 @@ namespace ConquerButler.Gui
 
         private void RemoveTasks_Click(object sender, RoutedEventArgs e)
         {
-            List<ConquerTaskModel> tasks = Model.Processes.SelectMany(p => p.Tasks).Where(t => t.IsSelected).ToList();
+            List<ConquerTaskModel> tasks = Model.Processes.Where(p => p.IsSelected).SelectMany(p => p.Tasks).Where(t => t.IsSelected).ToList();
 
             if (tasks.Count > 0)
             {

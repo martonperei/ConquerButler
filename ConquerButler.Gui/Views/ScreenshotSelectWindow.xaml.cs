@@ -9,7 +9,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ConquerButler.Native;
 
-namespace ConquerButler.Gui
+namespace ConquerButler.Gui.Views
 {
     [AddINotifyPropertyChangedInterface]
     public class ScreenshotSelectModel

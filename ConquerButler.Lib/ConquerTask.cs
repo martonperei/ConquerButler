@@ -245,7 +245,7 @@ namespace ConquerButler
 
         protected bool Equals(ConquerTask other)
         {
-            return string.Equals(TaskType, other.TaskType);
+            return Process.Equals(other.Process) && string.Equals(TaskType, other.TaskType);
         }
 
         public override bool Equals(object obj)
@@ -258,7 +258,7 @@ namespace ConquerButler
 
         public override int GetHashCode()
         {
-            return TaskType.GetHashCode();
+            return Process.GetHashCode() ^ TaskType.GetHashCode();
         }
 
         public void Dispose()

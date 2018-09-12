@@ -155,34 +155,35 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Tasks\ClickTaskView.xaml.cs">
+    <Compile Include="Views\Tasks\ClickTaskView.xaml.cs">
       <DependentUpon>ClickTaskView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Tasks\ConquerTaskViewModel.cs" />
-    <Compile Include="Tasks\CustomTaskView.xaml.cs">
+    <Compile Include="Views\ConquerTaskViewModel.cs" />
+    <Compile Include="Views\Tasks\CustomTaskView.xaml.cs">
       <DependentUpon>CustomTaskView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Tasks\StatsWatcherTaskView.xaml.cs">
+    <Compile Include="Views\Tasks\StatsWatcherTaskView.xaml.cs">
       <DependentUpon>StatsWatcherTaskView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Tasks\HuntingTaskView.xaml.cs">
+    <Compile Include="Views\Tasks\HuntingTaskView.xaml.cs">
       <DependentUpon>HuntingTaskView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Tasks\MiningTaskView.xaml.cs">
+    <Compile Include="Views\Tasks\MiningTaskView.xaml.cs">
       <DependentUpon>MiningTaskView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Tasks\ConquerTaskFactory.cs" />
-    <Compile Include="Tasks\XPSkillTaskView.xaml.cs">
+    <Compile Include="Views\ConquerTaskFactory.cs" />
+    <Compile Include="Views\Tasks\XPSkillTaskView.xaml.cs">
       <DependentUpon>XPSkillTaskView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="TaskViewWindow.xaml.cs">
+    <Compile Include="Views\TaskViewWindow.xaml.cs">
       <DependentUpon>TaskViewWindow.xaml</DependentUpon>
     </Compile>
-    <Page Include="ScreenshotSelectWindow.xaml">
+    <Compile Include="Input\GlobalHotkey.cs" />
+    <Page Include="Views\ScreenshotSelectWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="MainWindow.xaml">
+    <Page Include="Views\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -190,39 +191,38 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="GlobalHotkey.cs" />
-    <Compile Include="ScreenshotSelectWindow.xaml.cs">
+    <Compile Include="Views\ScreenshotSelectWindow.xaml.cs">
       <DependentUpon>ScreenshotSelectWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="MainWindow.xaml.cs">
+    <Compile Include="Views\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Tasks\ClickTaskView.xaml">
+    <Page Include="Views\Tasks\ClickTaskView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Tasks\CustomTaskView.xaml">
+    <Page Include="Views\Tasks\CustomTaskView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Tasks\StatsWatcherTaskView.xaml">
+    <Page Include="Views\Tasks\StatsWatcherTaskView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Tasks\HuntingTaskView.xaml">
+    <Page Include="Views\Tasks\HuntingTaskView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Tasks\MiningTaskView.xaml">
+    <Page Include="Views\Tasks\MiningTaskView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Tasks\XPSkillTaskView.xaml">
+    <Page Include="Views\Tasks\XPSkillTaskView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="TaskViewWindow.xaml">
+    <Page Include="Views\TaskViewWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -1,4 +1,4 @@
-﻿namespace ConquerButler.Gui.Tasks
+﻿namespace ConquerButler.Gui.Views
 {
     public interface ConquerTaskViewBase<out T>
     {

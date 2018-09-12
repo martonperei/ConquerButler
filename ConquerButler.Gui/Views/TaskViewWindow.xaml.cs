@@ -1,13 +1,13 @@
-﻿using ConquerButler.Gui.Tasks;
-using ConquerButler.Tasks;
+﻿using ConquerButler.Tasks;
 using PropertyChanged;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System;
+using ConquerButler.Gui.Views.Tasks;
 
-namespace ConquerButler.Gui
+namespace ConquerButler.Gui.Views
 {
     public delegate ConquerTask ConquerTaskFactoryFunc(ConquerProcess process);
 

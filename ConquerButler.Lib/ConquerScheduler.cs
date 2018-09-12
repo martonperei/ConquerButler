@@ -261,10 +261,7 @@ namespace ConquerButler
 
         public void AddTask(ConquerTask task)
         {
-            if (!Tasks.Any(t => t.TaskType.Equals(task.TaskType)))
-            {
-                Tasks.Add(task);
-            }
+            Tasks.Add(task);
 
             log.Info($"Task {task} added");
         }
@@ -307,7 +304,7 @@ namespace ConquerButler
 
         private void _processWatcher_ProcessStateChanged(Process process, bool isDisconnected)
         {
-            ConquerProcess conquerProcess = Processes.FirstOrDefault(c => c.InternalProcess.Id == process.Id);
+            ConquerProcess conquerProcess = Processes.Single(c => c.InternalProcess.Id == process.Id);
 
             log.Info($"Process {process.Id} disconnect state changed from {conquerProcess.Disconnected} to {isDisconnected}");
 
@@ -318,13 +315,13 @@ namespace ConquerButler
         {
             log.Info($"Process {process.Id} ended");
 
-            ConquerProcess conquerProcess = Processes.FirstOrDefault(c => c.InternalProcess.Id == process.Id);
+            ConquerProcess conquerProcess = Processes.Single(c => c.InternalProcess.Id == process.Id);
 
             List<ConquerTask> tasks = Tasks.Where(t => t.Process.Equals(conquerProcess)).ToList();
 
             foreach (ConquerTask task in tasks)
             {
-                RemoveTask(task)
+                RemoveTask(task);
             }
 
             Processes.Remove(conquerProcess);

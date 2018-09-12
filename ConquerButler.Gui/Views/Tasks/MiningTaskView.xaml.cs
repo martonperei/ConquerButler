@@ -2,7 +2,7 @@
 using PropertyChanged;
 using System.Windows.Controls;
 
-namespace ConquerButler.Gui.Tasks
+namespace ConquerButler.Gui.Views.Tasks
 {
     public class MiningTaskViewModel : ConquerTaskViewModel
     {

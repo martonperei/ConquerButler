@@ -3,7 +3,7 @@ using PropertyChanged;
 using System.Collections.Generic;
 using System.Windows.Controls;
 
-namespace ConquerButler.Gui.Tasks
+namespace ConquerButler.Gui.Views.Tasks
 {
     public class XPSkillTaskViewModel : ConquerTaskViewModel
     {

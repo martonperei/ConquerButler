@@ -1,7 +1,6 @@
 ﻿using PropertyChanged;
-using System.ComponentModel;
 
-namespace ConquerButler.Gui.Tasks
+namespace ConquerButler.Gui.Views
 {
     [AddINotifyPropertyChangedInterface]
     public class ConquerTaskViewModel

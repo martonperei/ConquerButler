@@ -14,8 +14,8 @@ namespace ConquerButler.Gui.Views.Tasks
     {
         public XPSkillTaskViewModel Model { get; set; } = new XPSkillTaskViewModel()
         {
-            XPSkillName = "roar",
-            Interval = 2,
+            XPSkillName = "fly",
+            Interval = 5000,
             TaskType = XPSkillTask.TASK_TYPE_NAME
         };
 

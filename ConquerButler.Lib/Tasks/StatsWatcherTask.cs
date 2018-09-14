@@ -2,9 +2,6 @@
 using System;
 using System.Drawing;
 using System.Threading.Tasks;
-using ConquerButler.Collections;
-using System.Collections.Generic;
-using ConquerButler.Native;
 using System.Linq;
 
 namespace ConquerButler.Tasks
@@ -27,8 +24,7 @@ namespace ConquerButler.Tasks
             Health = -1;
             Mana = -1;
 
-            Interval = 1;
-            IntervalVariance = 0;
+            Interval = 1000;
         }
 
         private const int healthX = 39;
@@ -98,7 +94,7 @@ namespace ConquerButler.Tasks
             }
         }
 
-        public override Task DoTick()
+        protected override Task DoTick()
         {
             int newHealth = 0;
             int newMana = 0;
@@ -128,7 +124,7 @@ namespace ConquerButler.Tasks
             Health = newHealth;
             Mana = newMana;
 
-            return Task.FromResult(true);
+            return Task.CompletedTask;
         }
 
         protected override void Dispose(bool disposing)

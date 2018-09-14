@@ -19,12 +19,12 @@ namespace ConquerButler.Tasks
         public ItemFindPauseTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
-            Interval = 0.1;
+            Interval = 100;
 
             _dropTemplate = LoadTemplate("images/drop.png");
         }
 
-        public override Task DoTick()
+        protected override Task DoTick()
         {
             List<Match> isDrop = FindMatches(0.95f, ConquerControlConstants.CHAT_AREA, _dropTemplate);
 
@@ -32,12 +32,12 @@ namespace ConquerButler.Tasks
             {
                 foreach (ConquerTask task in Scheduler.Tasks.Where(t => t.Process.Equals(Process) && t.NeedsUserFocus))
                 {
-                    task.Pause();
+                    task.Stop();
                 }
 
                 MessageBox.Show($"Item dropped");
 
-                Pause();
+                Stop();
             }
 
             return Task.FromResult(true);

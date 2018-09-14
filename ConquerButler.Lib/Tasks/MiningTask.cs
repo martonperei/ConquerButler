@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Drawing;
 using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
-using ConquerButler.Native;
 
 namespace ConquerButler.Tasks
 {
@@ -30,11 +29,10 @@ namespace ConquerButler.Tasks
             _copperoreTemplate = LoadTemplate("images/copperore.png");
             _ironoreTemplate = LoadTemplate("images/ironore.png");
 
-            Interval = 120;
-            IntervalVariance = 20;
+            Interval = 120000;
         }
 
-        public override async Task DoTick()
+        protected override async Task DoTick()
         {
             List<Match> matches = FindMatches(0.93f, ConquerControlConstants.INVENTORY, _ironoreTemplate, _copperoreTemplate);
 
@@ -42,32 +40,28 @@ namespace ConquerButler.Tasks
 
             log.Info($"Found {OreCount} ores...");
 
-            List<Task> taskList = new List<Task>();
-
             for (int i = matches.Count - 1; i >= 0 && i >= matches.Count - 19; i--)
             {
                 Match m = matches[i];
 
-                taskList.Add(EnqueueInputAction(async () =>
+                await EnqueueInputAction(async () =>
                 {
                     Process.LeftClick(m.Center());
-                    await Scheduler.Delay(250);
+                    await Delay(250);
                     Process.LeftClick(DROP_POINT, 20);
-                    await Scheduler.Delay(250);
+                    await Delay(250);
 
                     OreCount--;
                     TotalOresDropped++;
-                }, i));
+                }, i);
             }
 
-            taskList.Add(EnqueueInputAction(() =>
+            await EnqueueInputAction(() =>
             {
                 Process.RightClick(DROP_POINT, 20);
 
                 return Task.CompletedTask;
-            }, 0));
-
-            await Task.WhenAll(taskList);
+            }, 0);
         }
 
         protected override void Dispose(bool disposing)

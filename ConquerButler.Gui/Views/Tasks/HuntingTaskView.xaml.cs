@@ -13,7 +13,7 @@ namespace ConquerButler.Gui.Views.Tasks
         public HuntingTaskViewModel Model { get; set; } = new HuntingTaskViewModel()
         {
             NeedsUserFocus = true,
-            Interval = 0,
+            Interval = 100,
             TaskType = HuntingTask.TASK_TYPE_NAME
         };
 

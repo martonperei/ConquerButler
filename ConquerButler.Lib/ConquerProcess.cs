@@ -1,11 +1,7 @@
 ﻿using log4net;
 using System;
 using System.Drawing;
-using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using WindowsInput;
 using ConquerButler.Native;
@@ -22,25 +18,9 @@ namespace ConquerButler
         public ConquerScheduler Scheduler { get; protected set; }
         public Process InternalProcess { get; protected set; }
 
-        private bool _isDisconnected;
-        public bool Disconnected
-        {
-            get { return _isDisconnected; }
-            set
-            {
-                if (_isDisconnected != value)
-                {
-                    ProcessStateChange?.Invoke(value);
-                }
+        public bool Disconnected { get; set; }
 
-                _isDisconnected = value;
-            }
-        }
-
-        public bool Invalid { get; protected set; }
         public InputSimulator Simulator { get; protected set; }
-
-        public event Action<bool> ProcessStateChange;
 
         private readonly Random _random;
 
@@ -123,7 +103,7 @@ namespace ConquerButler
         {
             if (disposing)
             {
-                Invalid = true;
+
             }
         }
     }

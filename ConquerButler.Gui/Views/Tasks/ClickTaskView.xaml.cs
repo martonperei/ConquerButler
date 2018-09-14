@@ -19,7 +19,7 @@ namespace ConquerButler.Gui.Views.Tasks
             MouseButton = MouseButton.Left,
             NeedsUserFocus = true,
             Wait = 500,
-            Interval = 0,
+            Interval = 100,
             HoldCtrl = false,
             TaskType = ClickTask.TASK_TYPE_NAME
         };

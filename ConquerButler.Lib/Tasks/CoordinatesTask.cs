@@ -29,7 +29,7 @@ namespace ConquerButler.Tasks
         public CoordinatesTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
-            Interval = 0.1;
+            Interval = 100;
 
             _templates = new List<TemplatePyramid>() {
                 LoadTemplate("images/0.png", "0"),
@@ -45,7 +45,7 @@ namespace ConquerButler.Tasks
             };
         }
 
-        public override Task DoTick()
+        protected override Task DoTick()
         {
             List<Match2> numbers = new List<Match2>(6);
 

@@ -1,16 +1,16 @@
 ﻿using Accord.Extensions.Imaging.Algorithms.LINE2D;
+using ConquerButler.Native;
 using DotImaging;
 using log4net;
 using PropertyChanged;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
-using System.Linq;
-using System.Drawing;
-using ConquerButler.Native;
 
 namespace ConquerButler
 {
@@ -49,25 +49,33 @@ namespace ConquerButler
         public ConquerProcess Process { get; }
 
         public string TaskType { get; set; }
-        public bool Enabled { get; protected set; } = true;
-        public bool IsRunning { get; protected set; } = false;
-        public bool IsPaused { get; protected set; } = true;
+        public bool Running { get; protected set; }
 
-        public long StartTick { get; protected set; }
-        public double NextRun { get; protected set; }
+        public bool Enabled
+        {
+            get { return _taskCancellation != null && !_taskCancellation.IsCancellationRequested; }
+        }
 
-        public double Interval { get; set; } = 10;
-        public int IntervalVariance { get; set; } = 1;
+        public long StartTime { get; protected set; }
+
+        public long NextRun
+        {
+            get
+            {
+                return !Enabled || Running ? 0 : Math.Max((StartTime + Interval) - Scheduler.Clock.ElapsedMilliseconds, 0);
+            }
+        }
+
+        public virtual string ResultDisplayInfo { get { return ""; } protected set { } }
+
+        public int Interval { get; set; } = 10000;
         public int Priority { get; set; } = DEFAULT_PRIORITY;
         public bool NeedsUserFocus { get; set; } = false;
         public bool NeedsToBeConnected { get; set; } = true;
 
-        protected CancellationTokenSource CancellationToken;
-        protected Task CurrentTask;
-
         protected readonly Random Random;
 
-        public virtual string ResultDisplayInfo { get { return ""; } protected set { } }
+        private CancellationTokenSource _taskCancellation;
 
         public ConquerTask(string taskType, ConquerProcess process)
         {
@@ -86,96 +94,71 @@ namespace ConquerButler
         {
         }
 
-        public void Tick(double dt)
+        protected async Task Tick()
         {
-            if (!NeedsToBeConnected || (!Process.Disconnected && NeedsToBeConnected) &&
-                Enabled && !IsRunning && !IsPaused)
+            if ((!NeedsToBeConnected || (!Process.Disconnected && NeedsToBeConnected)) && Enabled && !Running)
             {
-                if (NextRun <= 0)
+                try
                 {
-                    log.Info($"Process {Process.Id} - task {TaskType} running");
+                    StartTime = Scheduler.Clock.ElapsedMilliseconds;
 
-                    IsRunning = true;
+                    Running = true;
 
-                    CancellationToken = new CancellationTokenSource();
-
-                    CurrentTask = Task.Run(async () =>
-                    {
-                        StartTick = Scheduler.Clock.Tick;
-                        NextRun = 0;
-
-                        try
-                        {
-                            await DoTick();
-                        }
-                        finally
-                        {
-                            NextRun = Interval + Random.Next(-IntervalVariance, IntervalVariance);
-
-                            IsRunning = false;
-                        }
-                    }, CancellationToken.Token).ContinueWith(task =>
-                    {
-                        if (!task.IsCanceled && task.IsFaulted)
-                        {
-                            log.Error($"Process {Process.Id} - task {TaskType} exception", task.Exception);
-                        }
-                        else
-                        {
-                            log.Info($"Process {Process.Id} - task {TaskType} finished - {ResultDisplayInfo}");
-                        }
-                    });
+                    await DoTick();
                 }
-                else
+                catch (TaskCanceledException)
                 {
-                    NextRun -= dt;
+                    log.Info($"Process {Process.Id} - task {TaskType} forcibly cancelled2");
+                }
+                finally
+                {
+                    Running = false;
                 }
             }
         }
 
-        public abstract Task DoTick();
+        protected abstract Task DoTick();
 
-        public void ForceRun()
+        private async void TaskLoop(Func<Task> task, TimeSpan interval)
         {
-            if (!IsRunning)
+            while (!_taskCancellation.IsCancellationRequested)
             {
-                NextRun = 0;
+                try
+                {
+                    await task();
+                    await Task.Delay(interval, _taskCancellation.Token);
+                }
+                catch (TaskCanceledException)
+                {
+                    log.Info($"Process {Process.Id} - task {TaskType} forcibly cancelled");
+                }
             }
-
-            log.Info($"Process {Process.Id} - task {TaskType} force ran");
         }
 
-        public void Pause()
+        public void Start()
         {
-            IsPaused = true;
+            if (!Enabled)
+            {
+                _taskCancellation = new CancellationTokenSource();
 
-            log.Info($"Process {Process.Id} - task {TaskType} paused");
+                TaskLoop(Tick, TimeSpan.FromMilliseconds(Interval));
+
+                log.Info($"Process {Process.Id} - task {TaskType} started");
+            }
         }
 
-        public void Resume()
+        public void Stop()
         {
-            IsPaused = false;
+            if (Enabled)
+            {
+                _taskCancellation.Cancel();
 
-            log.Info($"Process {Process.Id} - task {TaskType} resumed");
+                log.Info($"Process {Process.Id} - task {TaskType} stopped");
+            }
         }
 
-        public void Cancel()
+        public async Task EnqueueInputAction(Func<Task> action, int priority = 1)
         {
-            IsPaused = false;
-
-            IsRunning = false;
-
-            Enabled = false;
-
-            CancellationToken?.Cancel();
-
-            log.Info($"Process {Process.Id} - task {TaskType} canceled");
-        }
-
-        public Task EnqueueInputAction(Func<Task> action, int priority)
-        {
-            CancellationToken.Token.ThrowIfCancellationRequested();
-
             ConquerInputAction inputAction = new ConquerInputAction()
             {
                 Task = this,
@@ -185,7 +168,12 @@ namespace ConquerButler
 
             Scheduler.AddInputAction(inputAction);
 
-            return inputAction.ActionCompletion.Task;
+            await inputAction.ActionCompletion.Task;
+        }
+
+        public Task Delay(int delay, int variance = 50)
+        {
+            return Task.Delay(delay + Random.Next(-variance, variance));
         }
 
         protected TemplatePyramid LoadTemplate(string fileName, string class_ = null)
@@ -276,7 +264,7 @@ namespace ConquerButler
         {
             if (disposing)
             {
-                Cancel();
+                Stop();
             }
         }
     }

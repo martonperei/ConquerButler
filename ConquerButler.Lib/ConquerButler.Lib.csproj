@@ -102,9 +102,8 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="PresentationCore" />
-    <Reference Include="PropertyChanged, Version=2.5.9.0, Culture=neutral, PublicKeyToken=ee3ee20bcf148ddd, processorArchitecture=MSIL">
-      <HintPath>..\packages\PropertyChanged.Fody.2.5.9\lib\net452\PropertyChanged.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="PropertyChanged, Version=2.5.10.0, Culture=neutral, PublicKeyToken=ee3ee20bcf148ddd, processorArchitecture=MSIL">
+      <HintPath>..\packages\PropertyChanged.Fody.2.5.10\lib\net452\PropertyChanged.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -124,8 +123,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConquerInputAction.cs" />
     <Compile Include="Native\BitmapExtensions.cs" />
-    <Compile Include="Util\Clock.cs" />
     <Compile Include="Collections\ConcurrentPriorityQueue.cs" />
     <Compile Include="ConquerControlConstants.cs" />
     <Compile Include="ConquerScheduler.cs" />
@@ -148,7 +147,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml">
@@ -163,12 +164,12 @@
     <Error Condition="!Exists('..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets'))" />
     <Error Condition="!Exists('..\packages\DotImaging.IO.4.8.3\build\DotImaging.IO.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\DotImaging.IO.4.8.2\build\DotImaging.IO.targets'))" />
     <Error Condition="!Exists('..\packages\Accord.3.8.0\build\Accord.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.3.8.0\build\Accord.targets'))" />
-    <Error Condition="!Exists('..\packages\Fody.3.2.1\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.3.2.1\build\Fody.targets'))" />
+    <Error Condition="!Exists('..\packages\Fody.3.2.2\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.3.2.2\build\Fody.targets'))" />
   </Target>
   <Import Project="..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets" Condition="Exists('..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets')" />
   <Import Project="..\packages\DotImaging.IO.4.8.2\build\DotImaging.IO.targets" Condition="Exists('..\packages\DotImaging.IO.4.8.2\build\DotImaging.IO.targets')" />
   <Import Project="..\packages\Accord.3.8.0\build\Accord.targets" Condition="Exists('..\packages\Accord.3.8.0\build\Accord.targets')" />
-  <Import Project="..\packages\Fody.3.2.1\build\Fody.targets" Condition="Exists('..\packages\Fody.3.2.1\build\Fody.targets')" />
+  <Import Project="..\packages\Fody.3.2.2\build\Fody.targets" Condition="Exists('..\packages\Fody.3.2.2\build\Fody.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

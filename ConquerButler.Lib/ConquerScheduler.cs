@@ -1,4 +1,6 @@
-﻿using log4net;
+﻿using ConquerButler.Collections;
+using ConquerButler.Native;
+using log4net;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -7,64 +9,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using ConquerButler.Util;
-using ConquerButler.Collections;
-using ConquerButler.Native;
 
 namespace ConquerButler
 {
-    public class ActionFocusComparer : IComparer<ConquerInputAction>
-    {
-        public int Compare(ConquerInputAction x, ConquerInputAction y)
-        {
-            int c = x.Task.Priority.CompareTo(y.Task.Priority);
-
-            if (c == 0)
-            {
-                c = y.Task.StartTick.CompareTo(x.Task.StartTick);
-
-                if (c == 0)
-                {
-                    c = x.Task.Process.Id.CompareTo(y.Task.Process.Id);
-
-                    if (c == 0)
-                    {
-                        c = x.Priority.CompareTo(y.Priority);
-                    }
-                }
-            }
-
-            return c;
-        }
-    }
-
-    public class ConquerInputAction
-    {
-        public ConquerTask Task { get; set; }
-        public Func<Task> Action { get; set; }
-        public long Priority { get; set; }
-        public TaskCompletionSource<bool> ActionCompletion { get; } = new TaskCompletionSource<bool>();
-
-        public async Task Call()
-        {
-            try
-            {
-                await Action();
-
-                ActionCompletion.SetResult(true);
-            }
-            catch (Exception e)
-            {
-                ActionCompletion.SetException(e);
-            }
-        }
-
-        public void Cancel()
-        {
-            ActionCompletion.SetCanceled();
-        }
-    }
-
     public class ConquerScheduler : IDisposable
     {
         private static ILog log = LogManager.GetLogger(typeof(ConquerScheduler));
@@ -76,40 +23,28 @@ namespace ConquerButler
         {
             get
             {
-                return _cancellationTokenSource != null && !_cancellationTokenSource.IsCancellationRequested;
+                return _actionInputCancellation != null && !_actionInputCancellation.IsCancellationRequested;
             }
         }
 
-        public double TargetElapsedTime { get; protected set; }
-        public Clock Clock { get; protected set; }
+        public Stopwatch Clock { get; protected set; }
 
-        private double _frameTime;
-        private double _accumulator;
-
-        private readonly ConcurrentQueue<ConquerInputAction> _deferredActions;
-        private readonly BlockingCollection<ConquerInputAction> _actions;
+        private readonly ConcurrentQueue<ConquerInputAction> _deferredInputActions;
+        private readonly BlockingCollection<ConquerInputAction> _inputActions;
 
         private readonly ProcessWatcher _processWatcher;
-
-        private readonly Random _random;
-
-        private CancellationTokenSource _cancellationTokenSource;
-        private Task _tickTask;
-        private Task _actionTask;
+        private CancellationTokenSource _actionInputCancellation;
 
         public ConquerScheduler()
         {
             Processes = new ObservableCollection<ConquerProcess>();
             Tasks = new ObservableCollection<ConquerTask>();
 
-            TargetElapsedTime = 1 / 60f;
-            Clock = new Clock();
+            Clock = new Stopwatch();
 
-            _deferredActions = new ConcurrentQueue<ConquerInputAction>();
+            _deferredInputActions = new ConcurrentQueue<ConquerInputAction>();
 
-            _actions = new BlockingCollection<ConquerInputAction>(new ConcurrentPriorityQueue<ConquerInputAction>(new ActionFocusComparer()));
-
-            _random = new Random();
+            _inputActions = new BlockingCollection<ConquerInputAction>(new ConcurrentPriorityQueue<ConquerInputAction>(new ActionFocusComparer()));
 
             _processWatcher = new ProcessWatcher();
             _processWatcher.ProcessStarted += _processWatcher_ProcessStarted;
@@ -119,156 +54,103 @@ namespace ConquerButler
 
         public void Start()
         {
-            _cancellationTokenSource = new CancellationTokenSource();
-
             Clock.Start();
 
-            Clock.Frame();
+            _actionInputCancellation = new CancellationTokenSource();
 
             _processWatcher.Start();
 
-            _tickTask = Task.Factory.StartNew(TickLoop, _cancellationTokenSource.Token).ContinueWith(task =>
-            {
-                if (!task.IsCanceled && task.IsFaulted)
-                {
-                    log.Error("Tick task exception", task.Exception);
-                }
-                else
-                {
-                    log.Info("Tick task ended");
-                }
-            });
-
-            _actionTask = Task.Factory.StartNew(ActionLoop, _cancellationTokenSource.Token).ContinueWith(task =>
-            {
-                if (!task.IsCanceled && task.IsFaulted)
-                {
-                    log.Error("Action task exception", task.Exception);
-                } else
-                {
-                    log.Info("Action task ended");
-                }
-            });
+            Task.Factory.StartNew(InputActionLoop, _actionInputCancellation.Token);
         }
 
         public void Stop()
         {
-            _cancellationTokenSource.Cancel();
+            _actionInputCancellation.Cancel();
 
             _processWatcher.Stop();
+
+            Clock.Stop();
 
             log.Info("Scheduler stopped");
         }
 
-        protected void FixedTick(double dt)
+        private async void InputActionLoop()
         {
-            foreach (ConquerTask task in Tasks)
+            while (!_actionInputCancellation.IsCancellationRequested)
             {
-                task.Tick(_frameTime);
-            }
-        }
-
-        private void TickLoop()
-        {
-            while (!_cancellationTokenSource.IsCancellationRequested)
-            {
-                _frameTime = Clock.Frame();
-
-                if (_frameTime > 0.25f) _frameTime = 0.25f;
-
-                _accumulator += _frameTime;
-
-                while (_accumulator >= TargetElapsedTime)
+                while (_deferredInputActions.Count > 0)
                 {
-                    _accumulator -= TargetElapsedTime;
+                    ConquerInputAction inputAction;
 
-                    Clock.FixedUpdate();
+                    _deferredInputActions.TryDequeue(out inputAction);
 
-                    FixedTick(TargetElapsedTime);
+                    if (inputAction != null)
+                    {
+                        _inputActions.Add(inputAction);
+                    }
                 }
 
-                var remainingTimeMs = Math.Max(0, (int)((TargetElapsedTime - _frameTime) * 1000));
-
-                Thread.Sleep(remainingTimeMs);
-            }
-        }
-
-        private async void ActionLoop()
-        {
-            while (!_cancellationTokenSource.IsCancellationRequested)
-            {
                 try
                 {
-                    while (_deferredActions.Count > 0)
+                    ConquerInputAction inputAction = _inputActions.Take(_actionInputCancellation.Token);
+
+                    if (inputAction.Task.Enabled)
                     {
-                        ConquerInputAction deferredAction;
-
-                        _deferredActions.TryDequeue(out deferredAction);
-
-                        if (deferredAction != null)
-                        {
-                            _actions.Add(deferredAction);
-                        }
-                    }
-
-                    ConquerInputAction action = _actions.Take(_cancellationTokenSource.Token);
-
-                    if (action.Task.Enabled)
-                    {
-                        if (action.Task.NeedsUserFocus)
+                        if (inputAction.Task.NeedsUserFocus)
                         {
                             // task needs and has user focus
-                            if (action.Task.Process.HasUserFocus())
+                            if (inputAction.Task.Process.HasUserFocus())
                             {
-                                await action.Call();
+                                await inputAction.Execute();
                             }
                             else
                             {
                                 // schedule it again for later
-                                _deferredActions.Enqueue(action);
+                                _deferredInputActions.Enqueue(inputAction);
                             }
                         }
                         else
-                        { 
-                            if (!Helpers.IsForegroundWindow(action.Task.Process.InternalProcess))
+                        {
+                            if (!Helpers.IsForegroundWindow(inputAction.Task.Process.InternalProcess))
                             {
                                 // Task doesn't need user focus, set window to foreground
-                                log.Info($"Bringing process {action.Task.Process.Id} to foreground");
+                                log.Info($"Bringing process {inputAction.Task.Process.Id} to foreground");
 
-                                Helpers.SetForegroundWindow(action.Task.Process.InternalProcess);
+                                Helpers.SetForegroundWindow(inputAction.Task.Process.InternalProcess);
 
                                 await Task.Delay(100);
                             }
 
-                            if (Helpers.IsForegroundWindow(action.Task.Process.InternalProcess))
+                            if (Helpers.IsForegroundWindow(inputAction.Task.Process.InternalProcess))
                             {
-                                await action.Call();
+                                await inputAction.Execute();
                             }
                         }
                     }
                     else
                     {
-                        action.Cancel();
+                        inputAction.Cancel();
                     }
-                } catch (OperationCanceledException)
-                {
-                    log.Info("Scheduler task cancelled");
-                }
 
-                await Task.Delay(100);
+                    await Task.Delay(100);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
             }
         }
 
-        public void AddTask(ConquerTask task)
+        public void AddTask(ConquerTask conquerTask)
         {
-            Tasks.Add(task);
+            Tasks.Add(conquerTask);
 
-            log.Info($"Task {task} added");
+            log.Info($"Task {conquerTask} added");
         }
 
         public void RemoveTask(ConquerTask task)
         {
-            task.Cancel();
+            task.Stop();
 
             Tasks.Remove(task);
 
@@ -277,29 +159,7 @@ namespace ConquerButler
 
         public void AddInputAction(ConquerInputAction inputAction)
         {
-            _actions.Add(inputAction);
-        }
-
-        public void CancelRunning()
-        {
-            log.Info("Scheduler cancelling running taks...");
-
-            foreach (ConquerTask task in Tasks)
-            {
-                task.Cancel();
-            }
-
-            while (_actions.Count > 0)
-            {
-                ConquerInputAction action = _actions.Take();
-
-                action.Cancel();
-            }
-        }
-
-        public Task Delay(int delay, int variance = 50)
-        {
-            return Task.Delay(delay + _random.Next(-variance, variance));
+            _inputActions.Add(inputAction);
         }
 
         private void _processWatcher_ProcessStateChanged(Process process, bool isDisconnected)
@@ -319,7 +179,7 @@ namespace ConquerButler
 
             List<ConquerTask> tasks = Tasks.Where(t => t.Process.Equals(conquerProcess)).ToList();
 
-            foreach (ConquerTask task in tasks)
+            foreach (ConquerTask task in tasks.ToList())
             {
                 RemoveTask(task);
             }
@@ -353,12 +213,32 @@ namespace ConquerButler
             if (disposing)
             {
                 Stop();
+            }
+        }
+    }
 
-                foreach (ConquerTask task in Tasks)
+    public class ActionFocusComparer : IComparer<ConquerInputAction>
+    {
+        public int Compare(ConquerInputAction x, ConquerInputAction y)
+        {
+            int c = x.Task.Priority.CompareTo(y.Task.Priority);
+
+            if (c == 0)
+            {
+                c = y.Task.StartTime.CompareTo(x.Task.StartTime);
+
+                if (c == 0)
                 {
-                    task.Dispose();
+                    c = x.Task.Process.Id.CompareTo(y.Task.Process.Id);
+
+                    if (c == 0)
+                    {
+                        c = x.Priority.CompareTo(y.Priority);
+                    }
                 }
             }
+
+            return c;
         }
     }
 }

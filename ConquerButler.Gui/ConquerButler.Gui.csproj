@@ -101,8 +101,8 @@
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="PropertyChanged, Version=2.5.9.0, Culture=neutral, PublicKeyToken=ee3ee20bcf148ddd, processorArchitecture=MSIL">
-      <HintPath>..\packages\PropertyChanged.Fody.2.5.9\lib\net452\PropertyChanged.dll</HintPath>
+    <Reference Include="PropertyChanged, Version=2.5.10.0, Culture=neutral, PublicKeyToken=ee3ee20bcf148ddd, processorArchitecture=MSIL">
+      <HintPath>..\packages\PropertyChanged.Fody.2.5.10\lib\net452\PropertyChanged.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -171,7 +171,7 @@
     <Compile Include="Views\Tasks\MiningTaskView.xaml.cs">
       <DependentUpon>MiningTaskView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Views\ConquerTaskFactory.cs" />
+    <Compile Include="Views\ConquerTaskViewBase.cs" />
     <Compile Include="Views\Tasks\XPSkillTaskView.xaml.cs">
       <DependentUpon>XPSkillTaskView.xaml</DependentUpon>
     </Compile>
@@ -371,13 +371,13 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets'))" />
     <Error Condition="!Exists('..\packages\Accord.3.8.0\build\Accord.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.3.8.0\build\Accord.targets'))" />
-    <Error Condition="!Exists('..\packages\Fody.3.2.1\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.3.2.1\build\Fody.targets'))" />
     <Error Condition="!Exists('..\packages\Costura.Fody.3.1.0\build\Costura.Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.3.1.0\build\Costura.Fody.targets'))" />
+    <Error Condition="!Exists('..\packages\Fody.3.2.2\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.3.2.2\build\Fody.targets'))" />
   </Target>
   <Import Project="..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets" Condition="Exists('..\packages\Accord.Extensions.Imaging.Algorithms.LINE2D.3.0.1\build\Accord.Extensions.Imaging.Algorithms.LINE2D.targets')" />
   <Import Project="..\packages\Accord.3.8.0\build\Accord.targets" Condition="Exists('..\packages\Accord.3.8.0\build\Accord.targets')" />
-  <Import Project="..\packages\Fody.3.2.1\build\Fody.targets" Condition="Exists('..\packages\Fody.3.2.1\build\Fody.targets')" />
   <Import Project="..\packages\Costura.Fody.3.1.0\build\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.3.1.0\build\Costura.Fody.targets')" />
+  <Import Project="..\packages\Fody.3.2.2\build\Fody.targets" Condition="Exists('..\packages\Fody.3.2.2\build\Fody.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

@@ -35,10 +35,10 @@ namespace ConquerButler.Tasks
         public XPSkillTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
-            Interval = 5;
+            Interval = 5000;
         }
 
-        public async override Task DoTick()
+        protected async override Task DoTick()
         {
             if (_xpSkillTemplate != null)
             {
@@ -48,18 +48,16 @@ namespace ConquerButler.Tasks
                 {
                     await EnqueueInputAction(async () =>
                     {
-                        await Scheduler.Delay(1000);
-
                         Point p = Process.GetCursorPosition();
 
                         Process.LeftClick(isXpSkill[0].Center());
 
-                        await Scheduler.Delay(500);
+                        await Delay(500);
 
                         Helpers.ClientToVirtualScreen(Process.InternalProcess, ref p);
 
                         Process.Simulator.Mouse.MoveMouseTo(p.X, p.Y);
-                    }, 1);
+                    });
                 }
             }
         }

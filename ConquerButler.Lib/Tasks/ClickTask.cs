@@ -22,14 +22,14 @@ namespace ConquerButler.Tasks
         public ClickTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
-            Interval = 0;
+            Interval = 100;
 
             NeedsUserFocus = true;
         }
 
-        public async override Task DoTick()
+        protected async override Task DoTick()
         {
-            await EnqueueInputAction(async () =>
+            await EnqueueInputAction(() =>
             {
                 if (HoldCtrl)
                 {
@@ -51,8 +51,10 @@ namespace ConquerButler.Tasks
                     Process.Simulator.Keyboard.KeyUp(WindowsInput.Native.VirtualKeyCode.CONTROL);
                 }
 
-                await Scheduler.Delay(Wait);
-            }, 1);
+                return Task.CompletedTask;
+            });
+
+            await Delay(Wait);
         }
 
         protected override void Dispose(bool disposing)

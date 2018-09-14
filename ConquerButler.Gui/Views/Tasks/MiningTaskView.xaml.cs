@@ -12,7 +12,7 @@ namespace ConquerButler.Gui.Views.Tasks
     {
         public MiningTaskViewModel Model { get; set; } = new MiningTaskViewModel()
         {
-            Interval = 60,
+            Interval = 120000,
             TaskType = MiningTask.TASK_TYPE_NAME
         };
 

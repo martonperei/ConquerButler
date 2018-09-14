@@ -16,7 +16,7 @@ namespace ConquerButler.Tasks
         {
         }
 
-        public async override Task DoTick()
+        protected async override Task DoTick()
         {
             await Task.FromResult(true);
         }

@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using ConquerButler.Gui.Input;
+using ConquerButler.Native;
 using log4net;
 using PropertyChanged;
 using System;
@@ -6,28 +7,27 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Drawing;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using System.Windows;
-using ConquerButler.Native;
-using ConquerButler.Gui.Input;
 
 namespace ConquerButler.Gui.Views
 {
-    public class ConquerTaskModel : INotifyPropertyChanged
+    public class ConquerTaskModel : INotifyPropertyChanged, IDisposable
     {
         public bool IsSelected { get; set; }
 
-        public ConquerTask ConquerTask { get; set; }
+        public ConquerTask ConquerTask { get; private set; }
 
         public string StateDisplayInfo
         {
             get
             {
-                return $"{ConquerTask.TaskType,-15} {(ConquerTask.IsRunning ? ">>>" : "---")} {ConquerTask.NextRun,7:F2}";
+                return $"{ConquerTask.TaskType,-15} {(ConquerTask.Running ? ">>>" : "---")} {ConquerTask.NextRun / 1000f,7:F2}";
             }
         }
 
@@ -41,33 +41,59 @@ namespace ConquerButler.Gui.Views
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        private readonly IDisposable _result;
+        private readonly IDisposable _state;
+
         public ConquerTaskModel(ConquerTask task)
         {
             ConquerTask = task;
 
-            string[] events = new string[] { "IsRunning", "NextRun", "ResultDisplayInfo" };
+            _result = Observable.FromEventPattern<PropertyChangedEventArgs>(ConquerTask, "PropertyChanged")
+                .Where((e) => "ResultDisplayInfo".Equals(e.EventArgs.PropertyName))
+                .Sample(TimeSpan.FromMilliseconds(100))
+                .Subscribe(e =>
+                {
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ResultDisplayInfo"));
+                });
 
-            Observable.FromEventPattern<PropertyChangedEventArgs>(ConquerTask, "PropertyChanged")
-                .Where((e) => events.Contains(e.EventArgs.PropertyName))
-                .Sample(TimeSpan.FromSeconds(0.1))
+            _state = Observable.Interval(TimeSpan.FromMilliseconds(100))
                 .Subscribe(e =>
                 {
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("StateDisplayInfo"));
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ResultDisplayInfo"));
                 });
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~ConquerTaskModel()
+        {
+            Dispose(false);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _result.Dispose();
+                _state.Dispose();
+            }
         }
     }
 
     [AddINotifyPropertyChangedInterface]
-    public class ConquerProcessModel
+    public class ConquerProcessModel : IDisposable
     {
         public bool IsSelected { get; set; }
 
-        public bool Disconnected { get; set; }
+        public bool Disconnected { get { return ConquerProcess.Disconnected; } }
 
-        public ConquerProcess ConquerProcess { get; set; }
+        public ConquerProcess ConquerProcess { get; private set; }
 
-        public ObservableCollection<ConquerTaskModel> Tasks { get; set; } = new ObservableCollection<ConquerTaskModel>();
+        public ObservableCollection<ConquerTaskModel> Tasks { get; } = new ObservableCollection<ConquerTaskModel>();
 
         public Bitmap Screenshot { get; set; }
 
@@ -103,16 +129,7 @@ namespace ConquerButler.Gui.Views
         {
             ConquerProcess = process;
 
-            Disconnected = process.Disconnected;
-
-            process.ProcessStateChange += Process_ProcessStateChange;
-
             Refresh();
-        }
-
-        private void Process_ProcessStateChange(bool isDisconnected)
-        {
-            Application.Current.Dispatcher.Invoke(() => Disconnected = isDisconnected);
         }
 
         public void Refresh()
@@ -120,6 +137,28 @@ namespace ConquerButler.Gui.Views
             Screenshot?.Dispose();
 
             Screenshot = ConquerProcess.Screenshot();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~ConquerProcessModel()
+        {
+            Dispose(false);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (Screenshot != null)
+                {
+                    Screenshot.Dispose();
+                }
+            }
         }
     }
 
@@ -152,13 +191,13 @@ namespace ConquerButler.Gui.Views
             {
                 foreach (ConquerTask task in scheduler.Tasks)
                 {
-                    if (task.IsPaused)
+                    if (task.Enabled)
                     {
-                        task.Resume();
+                        task.Stop();
                     }
                     else
                     {
-                        task.Pause();
+                        task.Start();
                     }
                 }
             };
@@ -184,6 +223,8 @@ namespace ConquerButler.Gui.Views
 
         private void Window_Closed(object sender, EventArgs e)
         {
+            updateScreenshot.Stop();
+
             scheduler.Dispose();
             scheduler = null;
         }
@@ -234,7 +275,7 @@ namespace ConquerButler.Gui.Views
             });
         }
 
-        private void ForceRunTasks_OnClick(object sender, RoutedEventArgs e)
+        private void StartTasks_OnClick(object sender, RoutedEventArgs e)
         {
             IEnumerable<ConquerProcessModel> processes = Model.Processes.Where(p => p.IsSelected);
 
@@ -242,12 +283,12 @@ namespace ConquerButler.Gui.Views
             {
                 foreach (ConquerTaskModel task in process.Tasks)
                 {
-                    task.ConquerTask.ForceRun();
+                    task.ConquerTask.Start();
                 }
             }
         }
 
-        private void ResumeTasks_OnClick(object sender, RoutedEventArgs e)
+        private void StopTasks_OnClick(object sender, RoutedEventArgs e)
         {
             IEnumerable<ConquerProcessModel> processes = Model.Processes.Where(p => p.IsSelected);
 
@@ -255,20 +296,7 @@ namespace ConquerButler.Gui.Views
             {
                 foreach (ConquerTaskModel task in process.Tasks)
                 {
-                    task.ConquerTask.Resume();
-                }
-            }
-        }
-
-        private void PauseTasks_OnClick(object sender, RoutedEventArgs e)
-        {
-            IEnumerable<ConquerProcessModel> processes = Model.Processes.Where(p => p.IsSelected);
-
-            foreach (ConquerProcessModel process in processes)
-            {
-                foreach (ConquerTaskModel task in process.Tasks)
-                {
-                    task.ConquerTask.Pause();
+                    task.ConquerTask.Stop();
                 }
             }
         }
@@ -297,7 +325,7 @@ namespace ConquerButler.Gui.Views
 
             if (tasks.Count > 0)
             {
-                foreach (ConquerTaskModel task in tasks)
+                foreach (ConquerTaskModel task in tasks.ToList())
                 {
                     scheduler.RemoveTask(task.ConquerTask);
                 }
@@ -308,7 +336,7 @@ namespace ConquerButler.Gui.Views
 
                 foreach (ConquerProcessModel process in processes)
                 {
-                    foreach (ConquerTaskModel task in process.Tasks)
+                    foreach (ConquerTaskModel task in process.Tasks.ToList())
                     {
                         scheduler.RemoveTask(task.ConquerTask);
                     }

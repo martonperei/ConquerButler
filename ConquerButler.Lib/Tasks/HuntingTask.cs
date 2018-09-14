@@ -12,30 +12,39 @@ namespace ConquerButler.Tasks
         public HuntingTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
-            Interval = 0;
+            Interval = 100;
 
             NeedsUserFocus = true;
         }
 
-        public async override Task DoTick()
+        protected async override Task DoTick()
         {
-            await EnqueueInputAction(async () =>
+            await EnqueueInputAction(() =>
             {
                 Process.Simulator.Mouse.RightButtonClick();
-                await Scheduler.Delay(125);
-            }, 1);
 
-            await EnqueueInputAction(async () =>
+                return Task.CompletedTask;
+            });
+
+            await Delay(125);
+
+            await EnqueueInputAction(() =>
             {
                 Process.Simulator.Mouse.LeftButtonClick();
-                await Scheduler.Delay(125);
-            }, 1);
 
-            await EnqueueInputAction(async () =>
+                return Task.CompletedTask;
+            });
+
+            await Delay(125);
+
+            await EnqueueInputAction(() =>
             {
                 Process.Simulator.Mouse.RightButtonClick();
-                await Scheduler.Delay(125);
-            }, 1);
+
+                return Task.CompletedTask;
+            });
+
+            await Delay(125);
         }
 
         protected override void Dispose(bool disposing)

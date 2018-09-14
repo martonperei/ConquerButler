@@ -13,7 +13,7 @@ namespace ConquerButler.Gui.Views.Tasks
     {
         public StatsWatcherTaskViewModel Model { get; set; } = new StatsWatcherTaskViewModel()
         {
-            Interval = 1,
+            Interval = 1000,
             TaskType = StatsWatcherTask.TASK_TYPE_NAME
         };
 

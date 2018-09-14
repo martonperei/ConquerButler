@@ -94,7 +94,7 @@ namespace ConquerButler.Tasks
             }
         }
 
-        protected override Task DoTick()
+        protected override Task Tick()
         {
             int newHealth = 0;
             int newMana = 0;

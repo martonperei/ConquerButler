@@ -94,39 +94,31 @@ namespace ConquerButler
         {
         }
 
-        protected async Task Tick()
-        {
-            if ((!NeedsToBeConnected || (!Process.Disconnected && NeedsToBeConnected)) && Enabled && !Running)
-            {
-                try
-                {
-                    StartTime = Scheduler.Clock.ElapsedMilliseconds;
+        protected abstract Task Tick();
 
-                    Running = true;
-
-                    await DoTick();
-                }
-                catch (TaskCanceledException)
-                {
-                    log.Info($"Process {Process.Id} - task {TaskType} forcibly cancelled2");
-                }
-                finally
-                {
-                    Running = false;
-                }
-            }
-        }
-
-        protected abstract Task DoTick();
-
-        private async void TaskLoop(Func<Task> task, TimeSpan interval)
+        private async void TaskLoop()
         {
             while (!_taskCancellation.IsCancellationRequested)
             {
                 try
                 {
-                    await task();
-                    await Task.Delay(interval, _taskCancellation.Token);
+                    if ((!NeedsToBeConnected || (!Process.Disconnected && NeedsToBeConnected)) && Enabled && !Running)
+                    {
+                        try
+                        {
+                            StartTime = Scheduler.Clock.ElapsedMilliseconds;
+
+                            Running = true;
+
+                            await Tick();
+                        }
+                        finally
+                        {
+                            Running = false;
+                        }
+                    }
+
+                    await Task.Delay(TimeSpan.FromMilliseconds(Interval), _taskCancellation.Token);
                 }
                 catch (TaskCanceledException)
                 {
@@ -141,7 +133,7 @@ namespace ConquerButler
             {
                 _taskCancellation = new CancellationTokenSource();
 
-                TaskLoop(Tick, TimeSpan.FromMilliseconds(Interval));
+                TaskLoop();
 
                 log.Info($"Process {Process.Id} - task {TaskType} started");
             }

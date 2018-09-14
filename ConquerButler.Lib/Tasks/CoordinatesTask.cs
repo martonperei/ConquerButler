@@ -45,7 +45,7 @@ namespace ConquerButler.Tasks
             };
         }
 
-        protected override Task DoTick()
+        protected override Task Tick()
         {
             List<Match2> numbers = new List<Match2>(6);
 

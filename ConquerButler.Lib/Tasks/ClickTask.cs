@@ -27,7 +27,7 @@ namespace ConquerButler.Tasks
             NeedsUserFocus = true;
         }
 
-        protected async override Task DoTick()
+        protected async override Task Tick()
         {
             await EnqueueInputAction(() =>
             {

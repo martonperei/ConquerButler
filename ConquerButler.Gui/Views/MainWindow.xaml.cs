@@ -41,24 +41,16 @@ namespace ConquerButler.Gui.Views
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private readonly IDisposable _result;
-        private readonly IDisposable _state;
+        private readonly IDisposable _updater;
 
         public ConquerTaskModel(ConquerTask task)
         {
             ConquerTask = task;
 
-            _result = Observable.FromEventPattern<PropertyChangedEventArgs>(ConquerTask, "PropertyChanged")
-                .Where((e) => "ResultDisplayInfo".Equals(e.EventArgs.PropertyName))
-                .Sample(TimeSpan.FromMilliseconds(100))
+            _updater = Observable.Interval(TimeSpan.FromMilliseconds(100))
                 .Subscribe(e =>
                 {
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ResultDisplayInfo"));
-                });
-
-            _state = Observable.Interval(TimeSpan.FromMilliseconds(100))
-                .Subscribe(e =>
-                {
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("StateDisplayInfo"));
                 });
         }
@@ -78,8 +70,7 @@ namespace ConquerButler.Gui.Views
         {
             if (disposing)
             {
-                _result.Dispose();
-                _state.Dispose();
+                _updater.Dispose();
             }
         }
     }
@@ -189,22 +180,21 @@ namespace ConquerButler.Gui.Views
             globalHotkey = new GlobalHotkey(this);
             globalHotkey.HotkeyPressed += (s, e2) =>
             {
-                foreach (ConquerTask task in scheduler.Tasks)
+                if (scheduler.Running)
                 {
-                    if (task.Enabled)
-                    {
-                        task.Stop();
-                    }
-                    else
-                    {
-                        task.Start();
-                    }
+                    scheduler.Stop();
+                } else
+                {
+                    scheduler.Start();
                 }
             };
 
             scheduler = new ConquerScheduler();
-            scheduler.Processes.CollectionChanged += Processes_CollectionChanged;
-            scheduler.Tasks.CollectionChanged += Tasks_CollectionChanged;
+            scheduler.ProcessAdded += Scheduler_ProcessAdded;
+            scheduler.ProcessRemoved += Scheduler_ProcessRemoved;
+
+            scheduler.TaskAdded += Scheduler_TaskAdded;
+            scheduler.TaskRemoved += Scheduler_TaskRemoved;
 
             scheduler.Start();
 
@@ -221,58 +211,46 @@ namespace ConquerButler.Gui.Views
             log.Info("Initialized Window");
         }
 
+        private void Scheduler_TaskRemoved(ConquerTask task)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                ConquerProcessModel model = Model.Processes.Where(p => p.ConquerProcess.Equals(task.Process)).Single();
+                model.Tasks.Remove(model.Tasks.Single(m => m.ConquerTask == task));
+            });
+        }
+
+        private void Scheduler_TaskAdded(ConquerTask task)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                ConquerProcessModel model = Model.Processes.Where(p => p.ConquerProcess.Equals(task.Process)).Single();
+                model.Tasks.Add(new ConquerTaskModel(task));
+            });
+        }
+
+        private void Scheduler_ProcessRemoved(ConquerProcess process)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                Model.Processes.Remove(Model.Processes.Single(m => m.ConquerProcess == process));
+            });
+        }
+
+        private void Scheduler_ProcessAdded(ConquerProcess process)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                Model.Processes.Add(new ConquerProcessModel(process));
+            });
+        }
+
         private void Window_Closed(object sender, EventArgs e)
         {
             updateScreenshot.Stop();
 
             scheduler.Dispose();
             scheduler = null;
-        }
-
-        private void Processes_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                switch (e.Action)
-                {
-                    case NotifyCollectionChangedAction.Add:
-                        foreach (ConquerProcess process in e.NewItems)
-                        {
-                            Model.Processes.Add(new ConquerProcessModel(process));
-                        }
-                        break;
-                    case NotifyCollectionChangedAction.Remove:
-                        foreach (ConquerProcess process in e.OldItems)
-                        {
-                            Model.Processes.Remove(Model.Processes.Single(m => m.ConquerProcess == process));
-                        }
-                        break;
-                }
-            });
-        }
-
-        private void Tasks_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                switch (e.Action)
-                {
-                    case NotifyCollectionChangedAction.Add:
-                        foreach (ConquerTask task in e.NewItems)
-                        {
-                            ConquerProcessModel model = Model.Processes.Where(p => p.ConquerProcess.Equals(task.Process)).Single();
-                            model.Tasks.Add(new ConquerTaskModel(task));
-                        }
-                        break;
-                    case NotifyCollectionChangedAction.Remove:
-                        foreach (ConquerTask task in e.OldItems)
-                        {
-                            ConquerProcessModel model = Model.Processes.Where(p => p.ConquerProcess.Equals(task.Process)).Single();
-                            model.Tasks.Remove(model.Tasks.Single(m => m.ConquerTask == task));
-                        }
-                        break;
-                }
-            });
         }
 
         private void StartTasks_OnClick(object sender, RoutedEventArgs e)

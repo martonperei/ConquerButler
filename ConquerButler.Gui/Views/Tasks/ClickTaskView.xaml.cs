@@ -1,10 +1,9 @@
 ﻿using ConquerButler.Tasks;
-using PropertyChanged;
 using System.Windows.Controls;
 
 namespace ConquerButler.Gui.Views.Tasks
 {
-    
+
     public class ClickTaskViewModel : ConquerTaskViewModel
     {
         public MouseButton MouseButton { get; set; }
@@ -31,17 +30,16 @@ namespace ConquerButler.Gui.Views.Tasks
 
         public ConquerTask CreateTask(ConquerProcess process)
         {
-            var task = new ClickTask(process);
-
-            task.Interval = Model.Interval;
-            task.Priority = Model.Priority;
-            task.NeedsUserFocus = Model.NeedsUserFocus;
-            task.NeedsToBeConnected = Model.NeedsToBeConnected;
-            task.Wait = Model.Wait;
-            task.MouseButton = Model.MouseButton;
-            task.HoldCtrl = Model.HoldCtrl;
-
-            return task;
+            return new ClickTask(process)
+            {
+                Interval = Model.Interval,
+                Priority = Model.Priority,
+                NeedsUserFocus = Model.NeedsUserFocus,
+                NeedsToBeConnected = Model.NeedsToBeConnected,
+                Wait = Model.Wait,
+                MouseButton = Model.MouseButton,
+                HoldCtrl = Model.HoldCtrl
+            };
         }
     }
 }

@@ -4,7 +4,6 @@ using log4net;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -16,10 +15,16 @@ namespace ConquerButler
     {
         private static ILog log = LogManager.GetLogger(typeof(ConquerScheduler));
 
-        public ObservableCollection<ConquerProcess> Processes { get; set; }
-        public ObservableCollection<ConquerTask> Tasks { get; set; }
+        public delegate void TaskEvent(ConquerTask task);
+        public delegate void ProcessEvent(ConquerProcess process);
 
-        public bool IsRunning
+        public event TaskEvent TaskAdded;
+        public event TaskEvent TaskRemoved;
+
+        public event ProcessEvent ProcessAdded;
+        public event ProcessEvent ProcessRemoved;
+
+        public bool Running
         {
             get
             {
@@ -29,18 +34,20 @@ namespace ConquerButler
 
         public Stopwatch Clock { get; protected set; }
 
+        public List<ConquerProcess> Processes { get; private set; }
+        public List<ConquerTask> Tasks { get; private set; }
+
         private readonly ProcessWatcher _processWatcher;
 
         private readonly BlockingCollection<ConquerInputAction> _inputActions;
 
         private readonly Dictionary<ConquerTask, CancellationTokenSource> _taskCancellations;
-
         private CancellationTokenSource _schedulerCancellation;
 
         public ConquerScheduler()
         {
-            Processes = new ObservableCollection<ConquerProcess>();
-            Tasks = new ObservableCollection<ConquerTask>();
+            Processes = new List<ConquerProcess>();
+            Tasks = new List<ConquerTask>();
 
             Clock = new Stopwatch();
 
@@ -65,21 +72,27 @@ namespace ConquerButler
             {
                 if (t.IsCanceled || t.IsFaulted)
                 {
-                    log.Info($"MainLoop failed ${t.Exception}");
+                    log.Info($"MainLoop failed ${t.IsCanceled}");
                 }
                 else
                 {
                     log.Info("MainLoop finished");
                 }
             });
+
+            log.Info("Scheduler started");
         }
 
         public void Stop()
         {
             foreach (ConquerTask task in Tasks)
             {
-                _taskCancellations.TryGetValue(task, out CancellationTokenSource taskCancellation);
-                taskCancellation.Cancel();
+                if (task.Started)
+                {
+                    _taskCancellations.TryGetValue(task, out CancellationTokenSource taskCancellation);
+
+                    taskCancellation.Cancel();
+                }
             }
 
             _schedulerCancellation.Cancel();
@@ -220,11 +233,13 @@ namespace ConquerButler
             }
         }
 
-        public void AddTask(ConquerTask conquerTask)
+        public void AddTask(ConquerTask task)
         {
-            Tasks.Add(conquerTask);
+            Tasks.Add(task);
 
-            log.Info($"Task {conquerTask} added");
+            log.Info($"Task {task} added");
+
+            TaskAdded?.Invoke(task);
         }
 
         public void RemoveTask(ConquerTask task)
@@ -234,6 +249,8 @@ namespace ConquerButler
             Tasks.Remove(task);
 
             log.Info($"Task {task} removed");
+
+            TaskRemoved?.Invoke(task);
         }
 
         public Task Delay(ConquerTask task, int delay)
@@ -280,16 +297,22 @@ namespace ConquerButler
             }
 
             Processes.Remove(conquerProcess);
+
+            ProcessRemoved?.Invoke(conquerProcess);
         }
 
         private void _processWatcher_ProcessStarted(Process process, bool isDisconnected)
         {
             log.Info($"Process {process.Id} started");
 
-            Processes.Add(new ConquerProcess(process, this)
+            ConquerProcess conquerProcess = new ConquerProcess(process, this)
             {
                 Disconnected = isDisconnected
-            });
+            };
+
+            Processes.Add(conquerProcess);
+
+            ProcessAdded?.Invoke(conquerProcess);
         }
 
         public void Dispose()

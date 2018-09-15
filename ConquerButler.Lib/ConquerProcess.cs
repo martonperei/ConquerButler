@@ -9,7 +9,6 @@ using PropertyChanged;
 
 namespace ConquerButler
 {
-    [AddINotifyPropertyChangedInterface]
     public class ConquerProcess : IDisposable
     {
         private static ILog log = LogManager.GetLogger(typeof(ConquerProcess));

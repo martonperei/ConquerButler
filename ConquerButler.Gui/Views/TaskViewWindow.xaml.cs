@@ -91,7 +91,6 @@ namespace ConquerButler.Gui.Views
             //Model.TaskTypes.Add(new TaskTypeModel() { TaskType = CustomTask.TASK_TYPE_NAME, Content = new CustomTaskView() });
 
             Model.TaskTypes.Add(new TaskTypeModel() { TaskType = ItemFindPauseTask.TASK_TYPE_NAME, Factory = new DefaultTaskFactory<ItemFindPauseTask>() });
-            //Model.TaskTypes.Add(new TaskTypeModel() { TaskType = CoordinatesTask.TASK_TYPE_NAME, Factory = new DefaultTaskFactory<CoordinatesTask>() }); 
         }
 
         private void TaskTypeList_SelectionChanged(object sender, SelectionChangedEventArgs e)

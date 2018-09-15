@@ -1,6 +1,5 @@
 ﻿using ConquerButler.Tasks;
 //using ICSharpCode.AvalonEdit.Document;
-using PropertyChanged;
 using System;
 using System.IO;
 using System.Windows.Controls;
@@ -45,15 +44,15 @@ ResultDisplayInfo = () => runs.ToString();";
 
         public ConquerTask CreateTask(ConquerProcess process)
         {
-            var task = new CustomTask(process);
+            return new CustomTask(process)
+            {
 
-            task.Interval = Model.Interval;
-            task.Priority = Model.Priority;
-            task.NeedsUserFocus = Model.NeedsUserFocus;
-            task.NeedsToBeConnected = Model.NeedsToBeConnected;
-            task.TaskType = Model.TaskType;
-
-            return task;
+                Interval = Model.Interval,
+                Priority = Model.Priority,
+                NeedsUserFocus = Model.NeedsUserFocus,
+                NeedsToBeConnected = Model.NeedsToBeConnected,
+                TaskType = Model.TaskType
+            };
         }
 
         private void LoadSnippet_OnClick(object sender, System.Windows.RoutedEventArgs e)

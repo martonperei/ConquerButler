@@ -2,7 +2,6 @@
 using ConquerButler.Native;
 using DotImaging;
 using log4net;
-using PropertyChanged;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -34,7 +33,6 @@ namespace ConquerButler
         }
     }
 
-    [AddINotifyPropertyChangedInterface]
     public abstract class ConquerTask : IDisposable
     {
         private static ILog log = LogManager.GetLogger(typeof(ConquerTask));

@@ -1,5 +1,4 @@
 ﻿using ConquerButler.Tasks;
-using PropertyChanged;
 using System.Collections.Generic;
 using System.Windows.Controls;
 
@@ -8,6 +7,7 @@ namespace ConquerButler.Gui.Views.Tasks
     public class XPSkillTaskViewModel : ConquerTaskViewModel
     {
         public string XPSkillName { get; set; }
+        public List<string> Skills { get; set; } = new List<string>();
     }
 
     public partial class XPSkillTaskView : UserControl, ConquerTaskViewBase<XPSkillTaskViewModel>
@@ -15,6 +15,7 @@ namespace ConquerButler.Gui.Views.Tasks
         public XPSkillTaskViewModel Model { get; set; } = new XPSkillTaskViewModel()
         {
             XPSkillName = "fly",
+            Skills = { "roar", "fishy", "fly", "superman" },
             Interval = 5000,
             TaskType = XPSkillTask.TASK_TYPE_NAME
         };
@@ -22,26 +23,19 @@ namespace ConquerButler.Gui.Views.Tasks
         public XPSkillTaskView()
         {
             InitializeComponent();
-
-            SkillNameChooser.ItemsSource = new List<string>()
-            {
-                "roar", "fishy", "fly", "superman"
-            };
         }
 
         public ConquerTask CreateTask(ConquerProcess process)
         {
-            var task = new XPSkillTask(process);
-
-            task.Interval = Model.Interval;
-            task.Priority = Model.Priority;
-            task.NeedsUserFocus = Model.NeedsUserFocus;
-            task.NeedsToBeConnected = Model.NeedsToBeConnected;
-            task.TaskType = Model.TaskType;
-
-            task.XPSkillName = Model.XPSkillName;
-
-            return task;
+            return new XPSkillTask(process)
+            {
+                Interval = Model.Interval,
+                Priority = Model.Priority,
+                NeedsUserFocus = Model.NeedsUserFocus,
+                NeedsToBeConnected = Model.NeedsToBeConnected,
+                TaskType = Model.TaskType,
+                XPSkillName = Model.XPSkillName
+            };
         }
     }
 }

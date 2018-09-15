@@ -1,6 +1,4 @@
 ﻿using ConquerButler.Tasks;
-using PropertyChanged;
-using System;
 using System.Windows.Controls;
 
 namespace ConquerButler.Gui.Views.Tasks
@@ -24,16 +22,14 @@ namespace ConquerButler.Gui.Views.Tasks
 
         public ConquerTask CreateTask(ConquerProcess process)
         {
-            var task = new StatsWatcherTask(process);
-
-            task.Interval = Model.Interval;
-            task.Priority = Model.Priority;
-            task.NeedsUserFocus = Model.NeedsUserFocus;
-            task.TaskType = Model.TaskType;
-
-            task.NeedsToBeConnected = Model.NeedsToBeConnected;
-
-            return task;
+            return new StatsWatcherTask(process)
+            {
+                Interval = Model.Interval,
+                Priority = Model.Priority,
+                NeedsUserFocus = Model.NeedsUserFocus,
+                TaskType = Model.TaskType,
+                NeedsToBeConnected = Model.NeedsToBeConnected
+            };
         }
     }
 }

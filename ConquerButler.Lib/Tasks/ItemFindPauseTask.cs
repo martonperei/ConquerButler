@@ -24,7 +24,7 @@ namespace ConquerButler.Tasks
             _dropTemplate = LoadTemplate("images/drop.png");
         }
 
-        protected override Task Tick()
+        protected internal override Task Tick()
         {
             List<Match> isDrop = FindMatches(0.95f, ConquerControlConstants.CHAT_AREA, _dropTemplate);
 

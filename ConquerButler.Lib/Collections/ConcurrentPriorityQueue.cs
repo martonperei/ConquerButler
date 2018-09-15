@@ -226,7 +226,7 @@ namespace ConquerButler.Collections
 
         public void Dispose()
         {
-            ((IDisposable)_lock).Dispose();
+            _lock.Dispose();
         }
     }
 }

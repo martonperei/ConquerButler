@@ -9,14 +9,14 @@ namespace ConquerButler.Tasks
 
         public static string TASK_TYPE_NAME = "Custom";
 
-        public override string ResultDisplayInfo { get; protected set; }
+        public override string ResultDisplayInfo { get; }
 
         public CustomTask(ConquerProcess process)
             : base(TASK_TYPE_NAME, process)
         {
         }
 
-        protected async override Task Tick()
+        protected internal async override Task Tick()
         {
             await Task.FromResult(true);
         }

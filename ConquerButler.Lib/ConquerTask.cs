@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
 
@@ -48,15 +47,11 @@ namespace ConquerButler
 
         public ConquerProcess Process { get; }
 
-        public string TaskType { get; set; }
-        public bool Running { get; protected set; }
+        public bool Running { get; internal protected set; }
+        public bool Started { get; internal protected set; }
+        public bool Enabled { get; internal protected set; }
 
-        public bool Enabled
-        {
-            get { return _taskCancellation != null && !_taskCancellation.IsCancellationRequested; }
-        }
-
-        public long StartTime { get; protected set; }
+        public long StartTime { get; internal protected set; }
 
         public long NextRun
         {
@@ -66,16 +61,15 @@ namespace ConquerButler
             }
         }
 
-        public virtual string ResultDisplayInfo { get { return ""; } protected set { } }
+        public virtual string ResultDisplayInfo { get { return ""; } }
 
+        public string TaskType { get; set; }
         public int Interval { get; set; } = 10000;
         public int Priority { get; set; } = DEFAULT_PRIORITY;
         public bool NeedsUserFocus { get; set; } = false;
         public bool NeedsToBeConnected { get; set; } = true;
 
         protected readonly Random Random;
-
-        private CancellationTokenSource _taskCancellation;
 
         public ConquerTask(string taskType, ConquerProcess process)
         {
@@ -86,6 +80,28 @@ namespace ConquerButler
             Random = new Random();
         }
 
+        internal protected abstract Task Tick();
+
+        public void Start()
+        {
+            if (!Enabled)
+            {
+                Enabled = true;
+
+                log.Info($"Process {Process.Id} - task {TaskType} enabled");
+            }
+        }
+
+        public void Stop()
+        {
+            if (Enabled)
+            {
+                Enabled = false;
+
+                log.Info($"Process {Process.Id} - task {TaskType} disabled");
+            }
+        }
+
         public void OnHealthChanged(int previous, int current)
         {
         }
@@ -94,78 +110,14 @@ namespace ConquerButler
         {
         }
 
-        protected abstract Task Tick();
-
-        private async void TaskLoop()
-        {
-            while (!_taskCancellation.IsCancellationRequested)
-            {
-                try
-                {
-                    if ((!NeedsToBeConnected || (!Process.Disconnected && NeedsToBeConnected)) && Enabled && !Running)
-                    {
-                        try
-                        {
-                            StartTime = Scheduler.Clock.ElapsedMilliseconds;
-
-                            Running = true;
-
-                            await Tick();
-                        }
-                        finally
-                        {
-                            Running = false;
-                        }
-                    }
-
-                    await Task.Delay(TimeSpan.FromMilliseconds(Interval), _taskCancellation.Token);
-                }
-                catch (TaskCanceledException)
-                {
-                    log.Info($"Process {Process.Id} - task {TaskType} forcibly cancelled");
-                }
-            }
-        }
-
-        public void Start()
-        {
-            if (!Enabled)
-            {
-                _taskCancellation = new CancellationTokenSource();
-
-                TaskLoop();
-
-                log.Info($"Process {Process.Id} - task {TaskType} started");
-            }
-        }
-
-        public void Stop()
-        {
-            if (Enabled)
-            {
-                _taskCancellation.Cancel();
-
-                log.Info($"Process {Process.Id} - task {TaskType} stopped");
-            }
-        }
-
         public async Task EnqueueInputAction(Func<Task> action, int priority = 1)
         {
-            ConquerInputAction inputAction = new ConquerInputAction()
-            {
-                Task = this,
-                Action = action,
-                Priority = priority,
-            };
-
-            Scheduler.AddInputAction(inputAction);
-
-            await inputAction.ActionCompletion.Task;
+            await Scheduler.AddInputAction(this, action, priority);
         }
 
         public Task Delay(int delay, int variance = 50)
         {
-            return Task.Delay(delay + Random.Next(-variance, variance));
+            return Scheduler.Delay(this, delay + Random.Next(-variance, variance));
         }
 
         protected TemplatePyramid LoadTemplate(string fileName, string class_ = null)

@@ -23,17 +23,19 @@ namespace ConquerButler
         {
             get
             {
-                return _actionInputCancellation != null && !_actionInputCancellation.IsCancellationRequested;
+                return _schedulerCancellation != null && !_schedulerCancellation.IsCancellationRequested;
             }
         }
 
         public Stopwatch Clock { get; protected set; }
 
-        private readonly ConcurrentQueue<ConquerInputAction> _deferredInputActions;
+        private readonly ProcessWatcher _processWatcher;
+
         private readonly BlockingCollection<ConquerInputAction> _inputActions;
 
-        private readonly ProcessWatcher _processWatcher;
-        private CancellationTokenSource _actionInputCancellation;
+        private readonly Dictionary<ConquerTask, CancellationTokenSource> _taskCancellations;
+
+        private CancellationTokenSource _schedulerCancellation;
 
         public ConquerScheduler()
         {
@@ -42,9 +44,8 @@ namespace ConquerButler
 
             Clock = new Stopwatch();
 
-            _deferredInputActions = new ConcurrentQueue<ConquerInputAction>();
-
             _inputActions = new BlockingCollection<ConquerInputAction>(new ConcurrentPriorityQueue<ConquerInputAction>(new ActionFocusComparer()));
+            _taskCancellations = new Dictionary<ConquerTask, CancellationTokenSource>();
 
             _processWatcher = new ProcessWatcher();
             _processWatcher.ProcessStarted += _processWatcher_ProcessStarted;
@@ -54,18 +55,34 @@ namespace ConquerButler
 
         public void Start()
         {
-            Clock.Start();
-
-            _actionInputCancellation = new CancellationTokenSource();
-
             _processWatcher.Start();
 
-            Task.Factory.StartNew(InputActionLoop, _actionInputCancellation.Token);
+            Clock.Start();
+
+            _schedulerCancellation = new CancellationTokenSource();
+
+            Task.Run(MainLoop, _schedulerCancellation.Token).ContinueWith(t =>
+            {
+                if (t.IsCanceled || t.IsFaulted)
+                {
+                    log.Info($"MainLoop failed ${t.Exception}");
+                }
+                else
+                {
+                    log.Info("MainLoop finished");
+                }
+            });
         }
 
         public void Stop()
         {
-            _actionInputCancellation.Cancel();
+            foreach (ConquerTask task in Tasks)
+            {
+                _taskCancellations.TryGetValue(task, out CancellationTokenSource taskCancellation);
+                taskCancellation.Cancel();
+            }
+
+            _schedulerCancellation.Cancel();
 
             _processWatcher.Stop();
 
@@ -74,27 +91,89 @@ namespace ConquerButler
             log.Info("Scheduler stopped");
         }
 
-        private async void InputActionLoop()
+        public async Task MainLoop()
         {
-            while (!_actionInputCancellation.IsCancellationRequested)
+            InputActionLoop();
+
+            while (!_schedulerCancellation.IsCancellationRequested)
             {
-                while (_deferredInputActions.Count > 0)
+                foreach (ConquerTask task in Tasks)
                 {
-                    ConquerInputAction inputAction;
-
-                    _deferredInputActions.TryDequeue(out inputAction);
-
-                    if (inputAction != null)
+                    if (task.Enabled && !task.Started)
                     {
-                        _inputActions.Add(inputAction);
+                        TaskLoop(task);
+                    }
+                    else if (!task.Enabled && task.Started)
+                    {
+                        _taskCancellations.TryGetValue(task, out CancellationTokenSource taskCancellation);
+
+                        taskCancellation.Cancel();
                     }
                 }
 
+                await Task.Delay(1, _schedulerCancellation.Token);
+            }
+        }
+
+        private async void TaskLoop(ConquerTask task)
+        {
+            CancellationTokenSource taskCancellation = new CancellationTokenSource();
+
+            _taskCancellations.Add(task, taskCancellation);
+
+            task.Started = true;
+
+            await Task.Yield();
+
+            log.Info($"Process {task.Process.Id} - task {task.TaskType} started");
+
+            while (!taskCancellation.IsCancellationRequested)
+            {
                 try
                 {
-                    ConquerInputAction inputAction = _inputActions.Take(_actionInputCancellation.Token);
+                    if ((!task.NeedsToBeConnected || (!task.Process.Disconnected && task.NeedsToBeConnected)) && task.Enabled && !task.Running)
+                    {
+                        try
+                        {
+                            task.StartTime = Clock.ElapsedMilliseconds;
 
-                    if (inputAction.Task.Enabled)
+                            task.Running = true;
+
+                            await task.Tick();
+                        }
+                        finally
+                        {
+                            task.Running = false;
+                        }
+                    }
+
+                    await Task.Delay(TimeSpan.FromMilliseconds(task.Interval), taskCancellation.Token);
+                }
+                catch (TaskCanceledException)
+                {
+                    log.Info($"Process {task.Process.Id} - task {task.TaskType} forcibly cancelled");
+                    break;
+                }
+            }
+
+            task.Started = false;
+
+            _taskCancellations.Remove(task);
+
+            log.Info($"Process {task.Process.Id} - task {task.TaskType} stopped");
+        }
+
+        private async void InputActionLoop()
+        {
+            await Task.Yield();
+
+            while (!_schedulerCancellation.IsCancellationRequested)
+            {
+                try
+                {
+                    _inputActions.TryTake(out ConquerInputAction inputAction);
+
+                    if (inputAction != null && inputAction.Task.Enabled)
                     {
                         if (inputAction.Task.NeedsUserFocus)
                         {
@@ -106,7 +185,7 @@ namespace ConquerButler
                             else
                             {
                                 // schedule it again for later
-                                _deferredInputActions.Enqueue(inputAction);
+                                _inputActions.Add(inputAction);
                             }
                         }
                         else
@@ -118,7 +197,7 @@ namespace ConquerButler
 
                                 Helpers.SetForegroundWindow(inputAction.Task.Process.InternalProcess);
 
-                                await Task.Delay(100);
+                                await Task.Delay(100, _schedulerCancellation.Token);
                             }
 
                             if (Helpers.IsForegroundWindow(inputAction.Task.Process.InternalProcess))
@@ -127,12 +206,12 @@ namespace ConquerButler
                             }
                         }
                     }
-                    else
+                    else if (inputAction != null)
                     {
                         inputAction.Cancel();
                     }
 
-                    await Task.Delay(100);
+                    await Task.Delay(1, _schedulerCancellation.Token);
                 }
                 catch (OperationCanceledException)
                 {
@@ -157,9 +236,25 @@ namespace ConquerButler
             log.Info($"Task {task} removed");
         }
 
-        public void AddInputAction(ConquerInputAction inputAction)
+        public Task Delay(ConquerTask task, int delay)
         {
+            _taskCancellations.TryGetValue(task, out CancellationTokenSource taskCancellation);
+
+            return Task.Delay(delay, taskCancellation.Token);
+        }
+
+        public Task AddInputAction(ConquerTask task, Func<Task> action, int priority)
+        {
+            ConquerInputAction inputAction = new ConquerInputAction()
+            {
+                Task = task,
+                Action = action,
+                Priority = priority,
+            };
+
             _inputActions.Add(inputAction);
+
+            return inputAction.ActionCompletion.Task;
         }
 
         private void _processWatcher_ProcessStateChanged(Process process, bool isDisconnected)

@@ -32,7 +32,7 @@ namespace ConquerButler.Tasks
             Interval = 120000;
         }
 
-        protected override async Task Tick()
+        protected internal override async Task Tick()
         {
             List<Match> matches = FindMatches(0.93f, ConquerControlConstants.INVENTORY, _ironoreTemplate, _copperoreTemplate);
 

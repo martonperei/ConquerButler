@@ -38,7 +38,7 @@ namespace ConquerButler.Tasks
             Interval = 5000;
         }
 
-        protected async override Task Tick()
+        protected internal async override Task Tick()
         {
             if (_xpSkillTemplate != null)
             {

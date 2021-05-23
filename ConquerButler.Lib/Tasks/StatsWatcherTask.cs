@@ -94,7 +94,7 @@ namespace ConquerButler.Tasks
             }
         }
 
-        protected internal override Task Tick()
+        protected internal override async Task Tick()
         {
             int newHealth = 0;
             int newMana = 0;
@@ -109,7 +109,7 @@ namespace ConquerButler.Tasks
             {
                 foreach (ConquerTask task in Scheduler.Tasks.Where(t => t.Process.Equals(Process)))
                 {
-                    task.OnHealthChanged(Health, newHealth);
+                    await task.OnHealthChanged(Health, newHealth);
                 }
             }
 
@@ -117,14 +117,12 @@ namespace ConquerButler.Tasks
             {
                 foreach (ConquerTask task in Scheduler.Tasks.Where(t => t.Process.Equals(Process)))
                 {
-                    task.OnManaChanged(Mana, newMana);
+                    await task.OnManaChanged(Mana, newMana);
                 }
             }
 
             Health = newHealth;
             Mana = newMana;
-
-            return Task.CompletedTask;
         }
 
         protected override void Dispose(bool disposing)

@@ -3,5 +3,19 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              DataContext="{Binding RelativeSource={RelativeSource Mode=Self}}">
     <Grid>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="130" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Label Grid.Column="0" Grid.Row="0" Content="HealthThreshold"></Label>
+            <TextBox x:Name="HealthThresholdBox" 
+                Grid.Column="1" Grid.Row="0" VerticalAlignment="Center"
+                Text="{Binding Model.HealthThreshold}"/>
+        </Grid>
     </Grid>
 </UserControl>

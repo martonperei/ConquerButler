@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Drawing;
 using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
+using WindowsInput.Native;
 
 namespace ConquerButler.Tasks
 {
@@ -14,9 +15,14 @@ namespace ConquerButler.Tasks
         public static string TASK_TYPE_NAME = "Mining";
 
         private static Point DROP_POINT = new Point(700, 100);
+        private const int MAX_DROP_DROP = 9;
 
         private readonly TemplatePyramid _copperoreTemplate;
         private readonly TemplatePyramid _ironoreTemplate;
+
+        public int HealthThreshold { get; set; } = 50;
+
+        public bool BeingDisconnected { get; protected set; } = false;
 
         public int OreCount { get; protected set; }
         public int TotalOresDropped { get; protected set; }
@@ -32,6 +38,21 @@ namespace ConquerButler.Tasks
             Interval = 120000;
         }
 
+        public override async Task OnHealthChanged(int previous, int current)
+        {
+            if (current < HealthThreshold && !BeingDisconnected)
+            {
+                BeingDisconnected = true;
+
+                await EnqueueInputAction(() =>
+                {
+                    Process.Close();
+
+                    return Task.CompletedTask;
+                });
+            }
+        }
+
         protected internal override async Task Tick()
         {
             List<Match> matches = FindMatches(0.93f, ConquerControlConstants.INVENTORY, _ironoreTemplate, _copperoreTemplate);
@@ -40,7 +61,7 @@ namespace ConquerButler.Tasks
 
             log.Info($"Found {OreCount} ores...");
 
-            for (int i = matches.Count - 1; i >= 0 && i >= matches.Count - 19; i--)
+            for (int i = matches.Count - 1; i >= 0 && i >= matches.Count - MAX_DROP_DROP; i--)
             {
                 Match m = matches[i];
 

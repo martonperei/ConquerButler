@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using WindowsInput;
 using ConquerButler.Native;
 using PropertyChanged;
+using System.Threading.Tasks;
 
 namespace ConquerButler
 {
@@ -50,7 +51,7 @@ namespace ConquerButler
                 Helpers.IsCursorInsideWindow(Helpers.GetCursorPosition(InternalProcess), InternalProcess);
         }
 
-        private void TranslateToVirtualScreen(ref Point p, int variation = 5)
+        public void TranslateToVirtualScreen(ref Point p, int variation = 5)
         {
             p.X = p.X + _random.Next(-variation, variation);
             p.Y = p.Y + _random.Next(-variation, variation);
@@ -85,6 +86,11 @@ namespace ConquerButler
             TranslateToVirtualScreen(ref p, variation);
 
             Simulator.Mouse.MoveMouseTo(p.X, p.Y);
+        }
+
+        public void Close()
+        {
+            InternalProcess.CloseMainWindow();
         }
 
         public void Dispose()

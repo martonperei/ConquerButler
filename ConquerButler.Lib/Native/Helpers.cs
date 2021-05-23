@@ -156,7 +156,7 @@ namespace ConquerButler.Native
 
         public static IEnumerable<Process> GetProcesses(string processName)
         {
-            return Process.GetProcesses().Where(process => process.ProcessName.Equals(processName));
+            return Process.GetProcesses().Where(process => process.ProcessName.StartsWith(processName));
         }
 
         public static List<IntPtr> GetAllChildHandles(IntPtr handle)

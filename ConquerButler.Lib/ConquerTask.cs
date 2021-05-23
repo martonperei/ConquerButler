@@ -100,12 +100,14 @@ namespace ConquerButler
             }
         }
 
-        public void OnHealthChanged(int previous, int current)
+        public virtual Task OnHealthChanged(int previous, int current)
         {
+            return Task.CompletedTask;
         }
 
-        public void OnManaChanged(int previous, int current)
+        public virtual Task OnManaChanged(int previous, int current)
         {
+            return Task.CompletedTask;
         }
 
         public async Task EnqueueInputAction(Func<Task> action, int priority = 1)

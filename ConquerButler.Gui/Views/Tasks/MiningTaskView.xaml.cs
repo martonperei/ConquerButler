@@ -5,6 +5,7 @@ namespace ConquerButler.Gui.Views.Tasks
 {
     public class MiningTaskViewModel : ConquerTaskViewModel
     {
+        public int HealthThreshold { get; set; }
     }
 
     public partial class MiningTaskView : UserControl, ConquerTaskViewBase<MiningTaskViewModel>
@@ -12,7 +13,8 @@ namespace ConquerButler.Gui.Views.Tasks
         public MiningTaskViewModel Model { get; set; } = new MiningTaskViewModel()
         {
             Interval = 120000,
-            TaskType = MiningTask.TASK_TYPE_NAME
+            TaskType = MiningTask.TASK_TYPE_NAME,
+            HealthThreshold = 50
         };
 
         public MiningTaskView()
@@ -28,7 +30,8 @@ namespace ConquerButler.Gui.Views.Tasks
                 Priority = Model.Priority,
                 NeedsUserFocus = Model.NeedsUserFocus,
                 NeedsToBeConnected = Model.NeedsToBeConnected,
-                TaskType = Model.TaskType
+                TaskType = Model.TaskType,
+                HealthThreshold = Model.HealthThreshold
             };
         }
     }

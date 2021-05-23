@@ -251,6 +251,8 @@ namespace ConquerButler
             log.Info($"Task {task} removed");
 
             TaskRemoved?.Invoke(task);
+
+            _taskCancellations.Remove(task);
         }
 
         public Task Delay(ConquerTask task, int delay)

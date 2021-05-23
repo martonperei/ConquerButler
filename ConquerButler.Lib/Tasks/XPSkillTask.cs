@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Threading.Tasks;
 using TemplatePyramid = Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplatePyramid<Accord.Extensions.Imaging.Algorithms.LINE2D.ImageTemplate>;
 using ConquerButler.Native;
+using WindowsInput.Native;
 
 namespace ConquerButler.Tasks
 {
@@ -48,16 +49,28 @@ namespace ConquerButler.Tasks
                 {
                     await EnqueueInputAction(async () =>
                     {
-                        Point p = Process.GetCursorPosition();
+                        await Delay(250);
+                        Process.Simulator.Keyboard.KeyPress(VirtualKeyCode.F6);
+                        await Delay(250);
+                        Process.Simulator.Keyboard.KeyPress(VirtualKeyCode.F6);
+                        //Point p = Process.GetCursorPosition();
 
-                        Process.LeftClick(isXpSkill[0].Center());
+                        //Point skillP = isXpSkill[0].Center();
 
-                        await Delay(500);
+                        //Process.TranslateToVirtualScreen(ref skillP, 5);
 
-                        Helpers.ClientToVirtualScreen(Process.InternalProcess, ref p);
+                        //Process.Simulator.Mouse.MoveMouseTo(skillP.X, skillP.Y);
 
-                        Process.Simulator.Mouse.MoveMouseTo(p.X, p.Y);
-                    });
+                        //await Delay(500);
+
+                        //Process.Simulator.Mouse.LeftButtonClick();
+
+                        //await Delay(500);
+
+                        //Helpers.ClientToVirtualScreen(Process.InternalProcess, ref p);
+
+                        //Process.Simulator.Mouse.MoveMouseTo(p.X, p.Y);
+                    }, 0);
                 }
             }
         }
